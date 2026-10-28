@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0d0f17">
+<title>Bubble · AI Tutor</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"></script>
+</head>
+<body>
+<div id="viewport"><div id="world">
+  <svg id="wb"></svg>
+  <div id="bubble" aria-label="Bubble"><div class="eyes"><div class="eye" id="eL"></div><div class="eye" id="eR"></div></div><div id="mouth"></div></div>
+</div></div>
+<div id="toast" role="status"></div>
+<div id="menu" hidden></div>
+
+<div id="dock">
+  <div class="prog"><div id="bars"></div><div id="count">0/0</div></div>
+  <div class="row">
+    <button class="k" id="bMenu" aria-label="Menu">☰</button>
+    <button class="k" id="bReplay" aria-label="Replay">↻</button>
+    <button class="k main" id="bPlay" aria-label="Pause">⏸</button>
+    <button class="k" id="bMute" aria-label="Mute">🔊</button>
+    <button class="k" id="bShare" aria-label="Share">☍</button>
+  </div>
+  <form class="in" id="form">
+    <button type="button" class="k sm" id="bPlus" aria-label="Upload (locked)">+<span class="lock">🔒</span></button>
+    <button type="button" class="k sm" id="bQuick" aria-pressed="false" aria-label="Quick mode">⚡</button>
+    <label><input id="q" maxlength="400" autocomplete="off" placeholder="Yana so'rang..." aria-label="Savol"></label>
+    <button class="go" id="go" type="submit" aria-label="Send">➤</button>
+  </form>
+</div>
+<audio id="au" preload="auto"></audio>
+<script src="app.js"></script>
+</body>
+</html>
