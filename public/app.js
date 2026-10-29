@@ -20,17 +20,27 @@ let currentAudioUrl = null;
 let speaking = false;
 let recognition = null;
 let isPaused = false;
+
 let camera = { x: 0, y: 0, scale: 1 };
 let speechRequestId = 0;
 let emotionTimer = null;
 
-const STORAGE_KEY = 'bubble-ai-history-v1';
+// Doskada yozish holati
+let writingTimer = null;
+let writingRun = 0;
+let writeX = 150;
+let writeY = 220;
 
-// ------------------------------
+const STORAGE_KEY = 'bubble-ai-history-v1';
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+// ----------------------------------
 // XABAR VA EMOTSIYALAR
-// ------------------------------
+// ----------------------------------
 
 function showToast(message) {
+  if (!toast) return;
+
   toast.textContent = message;
   toast.classList.add('on');
 
@@ -53,9 +63,7 @@ function setEmotion(emotion = '') {
     'sad'
   );
 
-  if (emotion) {
-    bubble.classList.add(emotion);
-  }
+  if (emotion) bubble.classList.add(emotion);
 }
 
 function showThinking() {
@@ -78,9 +86,9 @@ function showSad() {
   }, 2200);
 }
 
-// ------------------------------
-// TARIXNI SAQLASH
-// ------------------------------
+// ----------------------------------
+// TARIX
+// ----------------------------------
 
 function saveHistory() {
   try {
@@ -99,17 +107,15 @@ function loadHistory() {
       localStorage.getItem(STORAGE_KEY) || '[]'
     );
 
-    if (Array.isArray(saved)) {
-      historyItems = saved;
-    }
+    historyItems = Array.isArray(saved) ? saved : [];
   } catch {
     historyItems = [];
   }
 }
 
-// ------------------------------
+// ----------------------------------
 // JAVOB KARTALARI
-// ------------------------------
+// ----------------------------------
 
 function createCard(item, index) {
   const card = document.createElement('article');
@@ -128,10 +134,7 @@ function createCard(item, index) {
   replay.type = 'button';
   replay.className = 'k';
   replay.textContent = '↻';
-  replay.setAttribute(
-    'aria-label',
-    'Javobni qayta eshitish'
-  );
+  replay.setAttribute('aria-label', 'Qayta eshitish');
 
   replay.onclick = () => {
     speakText(item.text, item.audio);
@@ -140,10 +143,10 @@ function createCard(item, index) {
   const pause = document.createElement('button');
   pause.type = 'button';
   pause.className = 'k';
-  pause.textContent = '⏸';
+  pause.textContent = '⏯';
   pause.setAttribute(
     'aria-label',
-    'Ovozni pauza qilish yoki davom ettirish'
+    'Pauza yoki davom ettirish'
   );
 
   pause.onclick = toggleSpeech;
@@ -163,9 +166,7 @@ function createCard(item, index) {
 
   card.append(header);
 
-  if (item.prompt) {
-    card.append(question);
-  }
+  if (item.prompt) card.append(question);
 
   card.append(body);
 
@@ -180,9 +181,205 @@ function renderHistory() {
   });
 }
 
-// ------------------------------
+// ----------------------------------
+// DOSKADA YOZISHNI TO‘XTATISH
+// ----------------------------------
+
+function stopWriting() {
+  writingRun++;
+
+  if (writingTimer) {
+    clearTimeout(writingTimer);
+    writingTimer = null;
+  }
+
+  const dot = document.getElementById('writing-dot');
+
+  if (dot) dot.remove();
+}
+
+// ----------------------------------
+// JAVOBNI DOSKAGA HARAKATLANIB YOZISH
+// ----------------------------------
+
+function writeOnBoard(text) {
+  stopWriting();
+
+  const run = writingRun;
+
+  // Oldingi javob kartalarini olib tashlash
+  answers.replaceChildren();
+
+  // Oldingi yozuv nuqtasini olib tashlash
+  const oldDot = document.getElementById('writing-dot');
+
+  if (oldDot) oldDot.remove();
+
+  const content = String(text || '').trim();
+
+  if (!content) {
+    showToast('Doskaga yoziladigan javob yo‘q.');
+    return;
+  }
+
+  // Matnni qatorlarga ajratish
+  const maxChars = 34;
+  const lines = [];
+
+  for (const originalLine of content.split(/\n/)) {
+    const words = originalLine.split(/\s+/);
+    let line = '';
+
+    for (const word of words) {
+      if (!word) continue;
+
+      // Juda uzun so‘zlarni ham bo‘lib yozish
+      if (word.length > maxChars) {
+        if (line) {
+          lines.push(line);
+          line = '';
+        }
+
+        for (let i = 0; i < word.length; i += maxChars) {
+          lines.push(word.slice(i, i + maxChars));
+        }
+
+        continue;
+      }
+
+      const candidate = line
+        ? `${line} ${word}`
+        : word;
+
+      if (candidate.length > maxChars && line) {
+        lines.push(line);
+        line = word;
+      } else {
+        line = candidate;
+      }
+    }
+
+    if (line) lines.push(line);
+    if (!words.length) lines.push('');
+  }
+
+  if (!lines.length) return;
+
+  const startX = writeX;
+  const startY = writeY;
+  const lineHeight = 42;
+  const fontSize = 27;
+
+  // Har bir qator uchun alohida SVG yozuvi
+  const textNodes = lines.map((line, index) => {
+    const node = document.createElementNS(SVG_NS, 'text');
+
+    node.setAttribute('x', startX);
+    node.setAttribute('y', startY + index * lineHeight);
+    node.setAttribute('font-size', fontSize);
+    node.setAttribute('font-family', 'Segoe UI, sans-serif');
+    node.setAttribute('font-weight', '500');
+    node.setAttribute('fill', '#f1f5f9');
+    node.setAttribute('xml:space', 'preserve');
+
+    node.textContent = '';
+
+    svg.appendChild(node);
+
+    return node;
+  });
+
+  // Qora nuqta — yozayotgan qalam uchi
+  const dot = document.createElementNS(SVG_NS, 'circle');
+
+  dot.id = 'writing-dot';
+  dot.setAttribute('r', '4');
+  dot.setAttribute('cx', startX);
+  dot.setAttribute('cy', startY - 8);
+  dot.setAttribute('fill', '#050505');
+  dot.setAttribute('stroke', '#ffffff');
+  dot.setAttribute('stroke-width', '0.8');
+
+  svg.appendChild(dot);
+
+  let lineIndex = 0;
+  let charIndex = 0;
+
+  // Taxminiy harf kengliklari
+  function estimateCharWidth(char) {
+    if (char === ' ') return 8;
+    if ('ilI.,!:;\'|'.includes(char)) return 7;
+    if ('mwMW@'.includes(char)) return 23;
+    return 15;
+  }
+
+  function nextCharacter() {
+    if (run !== writingRun) return;
+
+    // Keyingi qatorga o‘tish
+    while (
+      lineIndex < lines.length &&
+      charIndex >= lines[lineIndex].length
+    ) {
+      lineIndex++;
+      charIndex = 0;
+    }
+
+    // Yozish tugadi
+    if (lineIndex >= lines.length) {
+      dot.remove();
+      writingTimer = null;
+
+      writeY = startY + lines.length * lineHeight + 35;
+
+      // Doskaning pastki qismiga yetganda yangi ustundan boshlash
+      if (writeY > 3200) {
+        writeX += 650;
+        writeY = 220;
+      }
+
+      showHappy();
+      return;
+    }
+
+    const line = lines[lineIndex];
+    const char = line[charIndex];
+    const node = textNodes[lineIndex];
+
+    // Harfni bittadan ko‘rsatish
+    node.textContent += char;
+
+    // Nuqtaning joyini hozirgacha yozilgan belgilar bo‘yicha hisoblash
+    let offsetX = 0;
+
+    for (let i = 0; i <= charIndex; i++) {
+      offsetX += estimateCharWidth(line[i]);
+    }
+
+    const dotX = startX + offsetX;
+    const dotY = startY + lineIndex * lineHeight - 8;
+
+    dot.setAttribute('cx', dotX);
+    dot.setAttribute('cy', dotY);
+
+    // Bubble yozayotgan nuqta yoniga yuradi
+    bubble.style.left = `${Math.max(10, dotX + 16)}px`;
+    bubble.style.top = `${Math.max(10, dotY - 48)}px`;
+
+    charIndex++;
+
+    // Harflar sekinroq, bo‘sh joylar tezroq yoziladi
+    const delay = char === ' ' ? 35 : 65;
+
+    writingTimer = setTimeout(nextCharacter, delay);
+  }
+
+  nextCharacter();
+}
+
+// ----------------------------------
 // OVOZNI TO‘XTATISH
-// ------------------------------
+// ----------------------------------
 
 function stopSpeech() {
   speechRequestId++;
@@ -208,14 +405,12 @@ function stopSpeech() {
 
   bubble.classList.remove('speaking');
 
-  if (mouth) {
-    mouth.style.transform = '';
-  }
+  if (mouth) mouth.style.transform = '';
 }
 
-// ------------------------------
+// ----------------------------------
 // JAVOBNI OVOZDA O‘QISH
-// ------------------------------
+// ----------------------------------
 
 function speakText(text, audioData = null) {
   if (!text) {
@@ -274,9 +469,7 @@ function browserSpeak(text) {
   let started = false;
 
   function startSpeaking() {
-    if (started || requestId !== speechRequestId) {
-      return;
-    }
+    if (started || requestId !== speechRequestId) return;
 
     started = true;
 
@@ -343,10 +536,7 @@ function browserSpeak(text) {
       bubble.classList.remove('speaking');
       setEmotion('');
 
-      console.error(
-        'Brauzer ovoz xatosi:',
-        event.error
-      );
+      console.error('Ovoz xatosi:', event.error);
 
       showToast(
         'Ovoz ishlamadi. Telefonning TTS sozlamasini tekshiring.'
@@ -373,9 +563,9 @@ function browserSpeak(text) {
   }
 }
 
-// ------------------------------
+// ----------------------------------
 // OVOZ PAUZASI VA DAVOMI
-// ------------------------------
+// ----------------------------------
 
 function toggleSpeech() {
   if (audio.src && !audio.paused) {
@@ -384,9 +574,7 @@ function toggleSpeech() {
 
     const playButton = $('bPlay');
 
-    if (playButton) {
-      playButton.textContent = '▶ Davom';
-    }
+    if (playButton) playButton.textContent = '▶ Davom';
 
     return;
   }
@@ -402,9 +590,7 @@ function toggleSpeech() {
 
         const playButton = $('bPlay');
 
-        if (playButton) {
-          playButton.textContent = '⏸ Pauza';
-        }
+        if (playButton) playButton.textContent = '⏸ Pauza';
       })
       .catch(() => {
         currentAudioUrl = null;
@@ -427,18 +613,14 @@ function toggleSpeech() {
 
     const playButton = $('bPlay');
 
-    if (playButton) {
-      playButton.textContent = '▶ Davom';
-    }
+    if (playButton) playButton.textContent = '▶ Davom';
   } else if (synth.paused) {
     synth.resume();
     isPaused = false;
 
     const playButton = $('bPlay');
 
-    if (playButton) {
-      playButton.textContent = '⏸ Pauza';
-    }
+    if (playButton) playButton.textContent = '⏸ Pauza';
   } else if (currentAnswer) {
     speakText(currentAnswer, currentAudioUrl);
   }
@@ -453,9 +635,7 @@ audio.addEventListener('ended', () => {
 
   const playButton = $('bPlay');
 
-  if (playButton) {
-    playButton.textContent = '▶ Davom';
-  }
+  if (playButton) playButton.textContent = '▶ Davom';
 });
 
 audio.addEventListener('error', () => {
@@ -465,9 +645,9 @@ audio.addEventListener('error', () => {
   }
 });
 
-// ------------------------------
+// ----------------------------------
 // DOSKANI SURISH VA KATTALASHTIRISH
-// ------------------------------
+// ----------------------------------
 
 function applyCamera() {
   world.style.transform =
@@ -478,9 +658,7 @@ let pointer = null;
 let lastPoint = null;
 
 viewport.addEventListener('pointerdown', (event) => {
-  if (event.target.closest('button, input, article')) {
-    return;
-  }
+  if (event.target.closest('button, input, article')) return;
 
   pointer = event.pointerId;
 
@@ -494,9 +672,7 @@ viewport.addEventListener('pointerdown', (event) => {
 });
 
 viewport.addEventListener('pointermove', (event) => {
-  if (pointer !== event.pointerId || !lastPoint) {
-    return;
-  }
+  if (pointer !== event.pointerId || !lastPoint) return;
 
   camera.x += event.clientX - lastPoint.x;
   camera.y += event.clientY - lastPoint.y;
@@ -527,20 +703,18 @@ viewport.addEventListener('wheel', (event) => {
   const next = camera.scale *
     (event.deltaY > 0 ? 0.92 : 1.08);
 
-  camera.scale = Math.max(
-    0.55,
-    Math.min(1.6, next)
-  );
+  camera.scale = Math.max(0.55, Math.min(1.6, next));
 
   applyCamera();
 }, { passive: false });
 
-// ------------------------------
+// ----------------------------------
 // YANGI DOSKA
-// ------------------------------
+// ----------------------------------
 
 function resetBoard() {
   stopSpeech();
+  stopWriting();
   setEmotion('');
 
   historyItems = [];
@@ -548,13 +722,18 @@ function resetBoard() {
   saveHistory();
   renderHistory();
 
+  // Doskadagi oldingi yozuvlarni o‘chirish
+  svg.replaceChildren();
+
+  writeX = 150;
+  writeY = 220;
+
+  bubble.style.left = '30px';
+  bubble.style.top = '30px';
+
   menu.hidden = true;
 
-  camera = {
-    x: 0,
-    y: 0,
-    scale: 1
-  };
+  camera = { x: 0, y: 0, scale: 1 };
 
   applyCamera();
 
@@ -573,58 +752,55 @@ $('bReplay').addEventListener('click', () => {
 
 $('bPlay').addEventListener('click', toggleSpeech);
 
-// ------------------------------
+// ----------------------------------
 // RASM TANLASH
-// ------------------------------
+// ----------------------------------
 
 $('bPlus').addEventListener('click', () => {
   $('imageInput').click();
 });
 
-$('imageInput').addEventListener(
-  'change',
-  async (event) => {
-    const file = event.target.files?.[0];
+$('imageInput').addEventListener('change', async (event) => {
+  const file = event.target.files?.[0];
 
-    if (!file) return;
+  if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
-      showToast('Iltimos, rasm faylini tanlang.');
-      event.target.value = '';
-      return;
-    }
-
-    if (file.size > 7 * 1024 * 1024) {
-      showToast('Rasm 7 MB dan kichik bo‘lsin.');
-      event.target.value = '';
-      return;
-    }
-
-    const reader = new FileReader();
-
-    reader.onload = async () => {
-      try {
-        await ask(input.value.trim(), {
-          mimeType: file.type,
-          data: reader.result
-        });
-      } finally {
-        event.target.value = '';
-      }
-    };
-
-    reader.onerror = () => {
-      showToast('Rasmni o‘qib bo‘lmadi.');
-      event.target.value = '';
-    };
-
-    reader.readAsDataURL(file);
+  if (!file.type.startsWith('image/')) {
+    showToast('Iltimos, rasm faylini tanlang.');
+    event.target.value = '';
+    return;
   }
-);
 
-// ------------------------------
+  if (file.size > 7 * 1024 * 1024) {
+    showToast('Rasm 7 MB dan kichik bo‘lsin.');
+    event.target.value = '';
+    return;
+  }
+
+  const reader = new FileReader();
+
+  reader.onload = async () => {
+    try {
+      await ask(input.value.trim(), {
+        mimeType: file.type,
+        data: reader.result
+      });
+    } finally {
+      event.target.value = '';
+    }
+  };
+
+  reader.onerror = () => {
+    showToast('Rasmni o‘qib bo‘lmadi.');
+    event.target.value = '';
+  };
+
+  reader.readAsDataURL(file);
+});
+
+// ----------------------------------
 // MIKROFON
-// ------------------------------
+// ----------------------------------
 
 $('bMic').addEventListener('click', () => {
   const SpeechRecognition =
@@ -632,9 +808,7 @@ $('bMic').addEventListener('click', () => {
     window.webkitSpeechRecognition;
 
   if (!SpeechRecognition) {
-    showToast(
-      'Ovoz kiritish ishlamadi. Chrome’da sinang.'
-    );
+    showToast('Ovoz kiritish uchun Chrome’da sinang.');
     return;
   }
 
@@ -652,6 +826,7 @@ $('bMic').addEventListener('click', () => {
 
   recognition.onresult = (event) => {
     input.value = event.results[0][0].transcript;
+
     setEmotion('surprised');
 
     emotionTimer = setTimeout(() => {
@@ -660,9 +835,7 @@ $('bMic').addEventListener('click', () => {
   };
 
   recognition.onerror = () => {
-    showToast(
-      'Mikrofon ishlamadi. Ruxsatlarni tekshiring.'
-    );
+    showToast('Mikrofon ishlamadi. Ruxsatlarni tekshiring.');
   };
 
   recognition.onend = () => {
@@ -674,16 +847,13 @@ $('bMic').addEventListener('click', () => {
     showToast('Gapiring, savolingizni tinglayapman.');
   } catch {
     recognition = null;
-
-    showToast(
-      'Mikrofonni qayta ishga tushirib ko‘ring.'
-    );
+    showToast('Mikrofonni qayta ishga tushirib ko‘ring.');
   }
 });
 
-// ------------------------------
+// ----------------------------------
 // TARIX MENYUSI
-// ------------------------------
+// ----------------------------------
 
 $('bMenu').addEventListener('click', () => {
   menu.replaceChildren();
@@ -707,14 +877,15 @@ $('bMenu').addEventListener('click', () => {
         (item.prompt || 'Rasm tahlili').slice(0, 70);
 
       button.onclick = () => {
+        stopWriting();
         stopSpeech();
         setEmotion('');
 
-        answers.replaceChildren(createCard(item, 0));
-
+        // Tarixdagi javobni doskaga qayta yozish
         currentAnswer = item.text || '';
         currentAudioUrl = item.audio || null;
 
+        writeOnBoard(currentAnswer);
         menu.hidden = true;
       };
 
@@ -732,13 +903,12 @@ $('bMenu').addEventListener('click', () => {
   };
 
   menu.append(close);
-
   menu.hidden = !menu.hidden;
 });
 
-// ------------------------------
+// ----------------------------------
 // AI SAVOL-JAVOB
-// ------------------------------
+// ----------------------------------
 
 async function ask(prompt, image = null) {
   if (!prompt && !image) {
@@ -750,6 +920,7 @@ async function ask(prompt, image = null) {
   sendBtn.textContent = '…';
 
   stopSpeech();
+  stopWriting();
   showThinking();
 
   try {
@@ -788,21 +959,21 @@ async function ask(prompt, image = null) {
     historyItems = historyItems.slice(-30);
 
     saveHistory();
-    renderHistory();
 
     currentAnswer = item.text;
     currentAudioUrl = item.audio;
 
-    showHappy();
+    // Javob kartada emas, doskada yoziladi
+    writeOnBoard(item.text);
+
+    // Ovoz yozish animatsiyasi bilan bir vaqtda boshlanadi
     speakText(item.text, item.audio);
 
-    showToast('Javob tayyor.');
+    showToast('Bubble doskaga yozmoqda.');
   } catch (error) {
     showSad();
 
-    showToast(
-      error.message || 'Xatolik yuz berdi.'
-    );
+    showToast(error.message || 'Xatolik yuz berdi.');
   } finally {
     sendBtn.disabled = false;
     sendBtn.textContent = '➤';
@@ -811,18 +982,18 @@ async function ask(prompt, image = null) {
   }
 }
 
-// ------------------------------
+// ----------------------------------
 // SAVOL YUBORISH
-// ------------------------------
+// ----------------------------------
 
 form.addEventListener('submit', (event) => {
   event.preventDefault();
   ask(input.value.trim());
 });
 
-// ------------------------------
+// ----------------------------------
 // DASTLABKI HOLAT
-// ------------------------------
+// ----------------------------------
 
 loadHistory();
 renderHistory();
