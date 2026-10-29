@@ -21,20 +21,27 @@ let speaking = false;
 let recognition = null;
 let isPaused = false;
 let camera = { x: 0, y: 0, scale: 1 };
+let speechRequestId = 0;
 
 const STORAGE_KEY = 'bubble-ai-history-v1';
 const NS = 'http://www.w3.org/2000/svg';
 
 function showToast(message) {
+  if (!toast) return;
   toast.textContent = message;
   toast.classList.add('on');
   clearTimeout(showToast.timer);
-  showToast.timer = setTimeout(() => toast.classList.remove('on'), 2600);
+  showToast.timer = setTimeout(() => {
+    toast.classList.remove('on');
+  }, 2600);
 }
 
 function saveHistory() {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(historyItems.slice(-30)));
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(historyItems.slice(-30))
+    );
   } catch {
     showToast('Tarixni saqlab bo‘lmadi.');
   }
@@ -42,7 +49,9 @@ function saveHistory() {
 
 function loadHistory() {
   try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    const saved = JSON.parse(
+      localStorage.getItem(STORAGE_KEY) || '[]'
+    );
     if (Array.isArray(saved)) historyItems = saved;
   } catch {
     historyItems = [];
@@ -73,7 +82,10 @@ function createCard(item, index) {
   pause.type = 'button';
   pause.className = 'k';
   pause.textContent = '⏸';
-  pause.setAttribute('aria-label', 'Ovozni pauza qilish yoki davom ettirish');
+  pause.setAttribute(
+    'aria-label',
+    'Ovozni pauza qilish yoki davom ettirish'
+  );
   pause.onclick = toggleSpeech;
 
   controls.append(replay, pause);
@@ -81,52 +93,80 @@ function createCard(item, index) {
 
   const question = document.createElement('p');
   question.className = 'answer-text';
-  question.textContent = item.prompt ? `Savol: ${item.prompt}` : '';
+  question.textContent = item.prompt
+    ? `Savol: ${item.prompt}`
+    : '';
 
   const body = document.createElement('div');
   body.className = 'answer-text';
   body.textContent = item.text || '';
 
   card.append(header);
-  if (item.prompt) card.append(question);
-  card.append(body);
 
+  if (item.prompt) card.append(question);
+
+  card.append(body);
   return card;
 }
 
 function renderHistory() {
   answers.replaceChildren();
+
   historyItems.forEach((item, index) => {
     answers.append(createCard(item, index));
   });
 }
 
 function stopSpeech() {
+  speechRequestId++;
+
   if ('speechSynthesis' in window) {
     window.speechSynthesis.cancel();
   }
+
   audio.pause();
-  audio.currentTime = 0;
+
+  try {
+    audio.currentTime = 0;
+  } catch {}
+
   speaking = false;
   isPaused = false;
-  $('bPlay').textContent = '⏸ Pauza';
+
+  const playButton = $('bPlay');
+  if (playButton) playButton.textContent = '▶ Davom';
+
   bubble.classList.remove('speaking');
-  mouth.style.transform = '';
+
+  if (mouth) mouth.style.transform = '';
 }
 
 function speakText(text, audioData = null) {
+  if (!text) {
+    showToast('O‘qiladigan javob yo‘q.');
+    return;
+  }
+
   stopSpeech();
+
   currentAnswer = text;
   currentAudioUrl = audioData;
 
   if (audioData) {
     audio.src = audioData;
-    audio.play().then(() => {
-      speaking = true;
-      isPaused = false;
-      $('bPlay').textContent = '⏸ Pauza';
-      bubble.classList.add('speaking');
-    }).catch(() => browserSpeak(text));
+
+    audio.play()
+      .then(() => {
+        speaking = true;
+        isPaused = false;
+        bubble.classList.add('speaking');
+
+        const playButton = $('bPlay');
+        if (playButton) playButton.textContent = '⏸ Pauza';
+      })
+      .catch(() => {
+        browserSpeak(text);
+      });
   } else {
     browserSpeak(text);
   }
@@ -138,68 +178,124 @@ function browserSpeak(text) {
     return;
   }
 
+  const synth = window.speechSynthesis;
+  const requestId = speechRequestId;
+
+  synth.cancel();
+
   const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = 'uz-UZ';
-  utterance.rate = 0.92;
+  const voices = synth.getVoices();
+
+  const uzVoice = voices.find((voice) =>
+    voice.lang.toLowerCase().startsWith('uz')
+  );
+
+  if (uzVoice) {
+    utterance.voice = uzVoice;
+  }
+
+  utterance.lang = uzVoice ? uzVoice.lang : 'uz-UZ';
+  utterance.rate = 0.9;
+  utterance.pitch = 1;
 
   utterance.onstart = () => {
+    if (requestId !== speechRequestId) return;
+
     speaking = true;
     isPaused = false;
     bubble.classList.add('speaking');
-    $('bPlay').textContent = '⏸ Pauza';
+
+    const playButton = $('bPlay');
+    if (playButton) playButton.textContent = '⏸ Pauza';
   };
 
   utterance.onend = () => {
+    if (requestId !== speechRequestId) return;
+
     speaking = false;
     isPaused = false;
     bubble.classList.remove('speaking');
-    $('bPlay').textContent = '▶ Davom';
+
+    const playButton = $('bPlay');
+    if (playButton) playButton.textContent = '▶ Davom';
   };
 
-  utterance.onerror = () => {
+  utterance.onerror = (event) => {
+    if (requestId !== speechRequestId) return;
+    if (event.error === 'canceled' || event.error === 'interrupted') {
+      return;
+    }
+
     speaking = false;
+    isPaused = false;
     bubble.classList.remove('speaking');
+    showToast('Brauzer ovozni o‘qiy olmadi.');
   };
 
-  window.speechSynthesis.speak(utterance);
+  synth.speak(utterance);
 }
 
 function toggleSpeech() {
   if (audio.src && !audio.paused) {
     audio.pause();
     isPaused = true;
-    $('bPlay').textContent = '▶ Davom';
+
+    const playButton = $('bPlay');
+    if (playButton) playButton.textContent = '▶ Davom';
     return;
   }
 
   if (audio.src && audio.paused && audio.currentTime > 0) {
-    audio.play().then(() => {
-      isPaused = false;
-      $('bPlay').textContent = '⏸ Pauza';
-    }).catch(() => {});
+    audio.play()
+      .then(() => {
+        isPaused = false;
+
+        const playButton = $('bPlay');
+        if (playButton) playButton.textContent = '⏸ Pauza';
+      })
+      .catch(() => browserSpeak(currentAnswer));
+
     return;
   }
 
-  if ('speechSynthesis' in window) {
-    const synth = window.speechSynthesis;
-    if (synth.speaking && !synth.paused) {
-      synth.pause();
-      isPaused = true;
-      $('bPlay').textContent = '▶ Davom';
-    } else if (synth.paused) {
-      synth.resume();
-      isPaused = false;
-      $('bPlay').textContent = '⏸ Pauza';
-    } else if (currentAnswer) {
-      speakText(currentAnswer, currentAudioUrl);
-    }
+  if (!('speechSynthesis' in window)) {
+    showToast('Brauzer ovozli o‘qishni qo‘llamaydi.');
+    return;
+  }
+
+  const synth = window.speechSynthesis;
+
+  if (synth.speaking && !synth.paused) {
+    synth.pause();
+    isPaused = true;
+
+    const playButton = $('bPlay');
+    if (playButton) playButton.textContent = '▶ Davom';
+  } else if (synth.paused) {
+    synth.resume();
+    isPaused = false;
+
+    const playButton = $('bPlay');
+    if (playButton) playButton.textContent = '⏸ Pauza';
+  } else if (currentAnswer) {
+    speakText(currentAnswer, currentAudioUrl);
   }
 }
 
 audio.addEventListener('ended', () => {
   speaking = false;
+  isPaused = false;
   bubble.classList.remove('speaking');
-  $('bPlay').textContent = '▶ Davom';
+
+  const playButton = $('bPlay');
+  if (playButton) playButton.textContent = '▶ Davom';
+});
+
+audio.addEventListener('error', () => {
+  if (currentAnswer && currentAudioUrl) {
+    currentAudioUrl = null;
+    browserSpeak(currentAnswer);
+  }
 });
 
 function applyCamera() {
@@ -212,22 +308,34 @@ let lastPoint = null;
 
 viewport.addEventListener('pointerdown', (event) => {
   if (event.target.closest('button, input, article')) return;
+
   pointer = event.pointerId;
-  lastPoint = { x: event.clientX, y: event.clientY };
+  lastPoint = {
+    x: event.clientX,
+    y: event.clientY
+  };
+
   viewport.setPointerCapture(pointer);
   viewport.classList.add('drag');
 });
 
 viewport.addEventListener('pointermove', (event) => {
   if (pointer !== event.pointerId || !lastPoint) return;
+
   camera.x += event.clientX - lastPoint.x;
   camera.y += event.clientY - lastPoint.y;
-  lastPoint = { x: event.clientX, y: event.clientY };
+
+  lastPoint = {
+    x: event.clientX,
+    y: event.clientY
+  };
+
   applyCamera();
 });
 
 function endDrag(event) {
   if (pointer !== event.pointerId) return;
+
   pointer = null;
   lastPoint = null;
   viewport.classList.remove('drag');
@@ -238,27 +346,39 @@ viewport.addEventListener('pointercancel', endDrag);
 
 viewport.addEventListener('wheel', (event) => {
   event.preventDefault();
-  const next = camera.scale * (event.deltaY > 0 ? 0.92 : 1.08);
+
+  const next = camera.scale * (
+    event.deltaY > 0 ? 0.92 : 1.08
+  );
+
   camera.scale = Math.max(0.55, Math.min(1.6, next));
   applyCamera();
 }, { passive: false });
 
 function resetBoard() {
   stopSpeech();
+
   historyItems = [];
   saveHistory();
   renderHistory();
+
   menu.hidden = true;
   camera = { x: 0, y: 0, scale: 1 };
   applyCamera();
+
   showToast('Yangi doska ochildi.');
 }
 
 $('bNew').addEventListener('click', resetBoard);
+
 $('bReplay').addEventListener('click', () => {
-  if (currentAnswer) speakText(currentAnswer, currentAudioUrl);
-  else showToast('Hali qayta eshitiladigan javob yo‘q.');
+  if (currentAnswer) {
+    speakText(currentAnswer, currentAudioUrl);
+  } else {
+    showToast('Hali qayta eshitiladigan javob yo‘q.');
+  }
 });
+
 $('bPlay').addEventListener('click', toggleSpeech);
 
 $('bPlus').addEventListener('click', () => {
@@ -271,6 +391,7 @@ $('imageInput').addEventListener('change', async (event) => {
 
   if (!file.type.startsWith('image/')) {
     showToast('Iltimos, rasm faylini tanlang.');
+    event.target.value = '';
     return;
   }
 
@@ -281,22 +402,33 @@ $('imageInput').addEventListener('change', async (event) => {
   }
 
   const reader = new FileReader();
+
   reader.onload = async () => {
-    await ask(input.value.trim(), {
-      mimeType: file.type,
-      data: reader.result
-    });
+    try {
+      await ask(input.value.trim(), {
+        mimeType: file.type,
+        data: reader.result
+      });
+    } finally {
+      event.target.value = '';
+    }
+  };
+
+  reader.onerror = () => {
+    showToast('Rasmni o‘qib bo‘lmadi.');
     event.target.value = '';
   };
-  reader.onerror = () => showToast('Rasmni o‘qib bo‘lmadi.');
+
   reader.readAsDataURL(file);
 });
 
 $('bMic').addEventListener('click', () => {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const SpeechRecognition =
+    window.SpeechRecognition ||
+    window.webkitSpeechRecognition;
 
   if (!SpeechRecognition) {
-    showToast('Ovoz kiritish bu brauzerda ishlamaydi. Chrome’da sinang.');
+    showToast('Ovoz kiritish ishlamadi. Chrome’da sinang.');
     return;
   }
 
@@ -315,10 +447,21 @@ $('bMic').addEventListener('click', () => {
     input.value = event.results[0][0].transcript;
   };
 
-  recognition.onerror = () => showToast('Mikrofon ishlamadi. Ruxsatlarni tekshiring.');
-  recognition.onend = () => { recognition = null; };
-  recognition.start();
-  showToast('Gapiring, savolingizni tinglayapman.');
+  recognition.onerror = () => {
+    showToast('Mikrofon ishlamadi. Ruxsatlarni tekshiring.');
+  };
+
+  recognition.onend = () => {
+    recognition = null;
+  };
+
+  try {
+    recognition.start();
+    showToast('Gapiring, savolingizni tinglayapman.');
+  } catch {
+    recognition = null;
+    showToast('Mikrofonni qayta ishga tushirib ko‘ring.');
+  }
 });
 
 $('bMenu').addEventListener('click', () => {
@@ -336,14 +479,19 @@ $('bMenu').addEventListener('click', () => {
     [...historyItems].reverse().forEach((item) => {
       const button = document.createElement('button');
       button.type = 'button';
-      button.textContent = (item.prompt || 'Rasm tahlili').slice(0, 70);
+      button.textContent =
+        (item.prompt || 'Rasm tahlili').slice(0, 70);
+
       button.onclick = () => {
         stopSpeech();
+
         answers.replaceChildren(createCard(item, 0));
-        currentAnswer = item.text;
-        currentAudioUrl = item.audio;
+        currentAnswer = item.text || '';
+        currentAudioUrl = item.audio || null;
+
         menu.hidden = true;
       };
+
       menu.append(button);
     });
   }
@@ -351,9 +499,11 @@ $('bMenu').addEventListener('click', () => {
   const close = document.createElement('button');
   close.type = 'button';
   close.textContent = 'Yopish';
-  close.onclick = () => { menu.hidden = true; };
-  menu.append(close);
+  close.onclick = () => {
+    menu.hidden = true;
+  };
 
+  menu.append(close);
   menu.hidden = !menu.hidden;
 });
 
@@ -370,7 +520,9 @@ async function ask(prompt, image = null) {
   try {
     const response = await fetch('/api/lesson', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify({
         prompt,
         image,
@@ -378,7 +530,13 @@ async function ask(prompt, image = null) {
       })
     });
 
-    const result = await response.json();
+    let result;
+
+    try {
+      result = await response.json();
+    } catch {
+      throw new Error('Serverdan noto‘g‘ri javob keldi.');
+    }
 
     if (!response.ok) {
       throw new Error(result.error || 'Server xatosi');
@@ -386,18 +544,20 @@ async function ask(prompt, image = null) {
 
     const item = {
       prompt,
-      text: result.text,
+      text: result.text || 'Javob bo‘sh qaytdi.',
       audio: result.audio || null,
       time: Date.now()
     };
 
     historyItems.push(item);
     historyItems = historyItems.slice(-30);
+
     saveHistory();
     renderHistory();
 
     currentAnswer = item.text;
     currentAudioUrl = item.audio;
+
     speakText(item.text, item.audio);
     showToast('Javob tayyor.');
   } catch (error) {
@@ -423,10 +583,12 @@ if (historyItems.length) {
   currentAnswer = last.text || '';
   currentAudioUrl = last.audio || null;
 } else {
-  currentAnswer = 'Salom! Men Bubble AI. Savolingizni yozing yoki rasm yuboring.';
+  currentAnswer =
+    'Salom! Men Bubble AI. Savolingizni yozing yoki rasm yuboring.';
 }
 
 bubble.style.left = '30px';
 bubble.style.top = '30px';
 answers.style.pointerEvents = 'auto';
+
 applyCamera();
