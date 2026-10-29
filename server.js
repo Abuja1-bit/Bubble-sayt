@@ -33,7 +33,7 @@ app.post('/api/lesson', async (req, res) => {
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3.8-flash',
       contents:
         "Sen Bubble nomli aqlli repetitor-robotchasan. O'quvchining savoliga mantiqiy, " +
         "qadam-baqadam va tushunarli qilib o'zbek tilida javob ber. " +
