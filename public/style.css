@@ -158,3 +158,91 @@ button { color: inherit; cursor: pointer; }
   .top-actions button { padding: 8px 7px; font-size: 11px; }
   #dock { width: calc(100% - 12px); padding: 8px; }
 }
+
+
+
+/* BUBBLE — tabiiy harakat */
+#bubble {
+  animation: bubble-float 3s ease-in-out infinite;
+  transform-origin: center;
+  transition:
+    filter 0.25s ease,
+    box-shadow 0.25s ease,
+    border-radius 0.25s ease;
+}
+
+@keyframes bubble-float {
+  0%, 100% { margin-top: 0; }
+  50% { margin-top: -9px; }
+}
+
+/* Ko‘zlar pirpirashi */
+.eyes {
+  animation: eye-blink 4s infinite;
+  transform-origin: center;
+}
+
+@keyframes eye-blink {
+  0%, 45%, 49%, 100% { transform: scaleY(1); }
+  47% { transform: scaleY(0.12); }
+}
+
+/* Javob gapirayotganda */
+#bubble.speaking {
+  animation: bubble-talk 0.45s ease-in-out infinite alternate;
+  filter: brightness(1.12);
+}
+
+@keyframes bubble-talk {
+  from { transform: scale(1); }
+  to { transform: scale(1.07, 0.96); }
+}
+
+/* O‘ylanayotgan holat */
+#bubble.thinking {
+  animation: bubble-think 0.7s ease-in-out infinite alternate;
+  box-shadow: 0 0 42px rgba(96,165,250,.75);
+}
+
+@keyframes bubble-think {
+  from { transform: scale(1); }
+  to { transform: scale(0.94); }
+}
+
+/* Xursand */
+#bubble.happy {
+  box-shadow: 0 0 48px rgba(74,222,128,.65);
+  filter: hue-rotate(35deg) brightness(1.1);
+}
+
+/* Hayron */
+#bubble.surprised {
+  border-radius: 43%;
+  filter: brightness(1.2);
+}
+
+#bubble.surprised .eye {
+  transform: scale(1.25);
+}
+
+#bubble.surprised #mouth {
+  width: 10px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+/* Xatolik yuz berganda */
+#bubble.sad {
+  filter: hue-rotate(150deg) brightness(.85);
+}
+
+/* Harakatlar kamaytirilishini tanlagan qurilmalar uchun */
+@media (prefers-reduced-motion: reduce) {
+  #bubble,
+  #bubble.speaking,
+  #bubble.thinking,
+  .eyes {
+    animation: none;
+  }
+}
+
