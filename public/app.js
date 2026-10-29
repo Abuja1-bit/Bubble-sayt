@@ -27,7 +27,6 @@ const STORAGE_KEY = 'bubble-ai-history-v1';
 const NS = 'http://www.w3.org/2000/svg';
 
 function showToast(message) {
-  if (!toast) return;
   toast.textContent = message;
   toast.classList.add('on');
   clearTimeout(showToast.timer);
@@ -52,7 +51,10 @@ function loadHistory() {
     const saved = JSON.parse(
       localStorage.getItem(STORAGE_KEY) || '[]'
     );
-    if (Array.isArray(saved)) historyItems = saved;
+
+    if (Array.isArray(saved)) {
+      historyItems = saved;
+    }
   } catch {
     historyItems = [];
   }
@@ -103,9 +105,12 @@ function createCard(item, index) {
 
   card.append(header);
 
-  if (item.prompt) card.append(question);
+  if (item.prompt) {
+    card.append(question);
+  }
 
   card.append(body);
+
   return card;
 }
 
@@ -134,11 +139,16 @@ function stopSpeech() {
   isPaused = false;
 
   const playButton = $('bPlay');
-  if (playButton) playButton.textContent = '▶ Davom';
+
+  if (playButton) {
+    playButton.textContent = '▶ Davom';
+  }
 
   bubble.classList.remove('speaking');
 
-  if (mouth) mouth.style.transform = '';
+  if (mouth) {
+    mouth.style.transform = '';
+  }
 }
 
 function speakText(text, audioData = null) {
@@ -162,7 +172,10 @@ function speakText(text, audioData = null) {
         bubble.classList.add('speaking');
 
         const playButton = $('bPlay');
-        if (playButton) playButton.textContent = '⏸ Pauza';
+
+        if (playButton) {
+          playButton.textContent = '⏸ Pauza';
+        }
       })
       .catch(() => {
         browserSpeak(text);
@@ -174,7 +187,7 @@ function speakText(text, audioData = null) {
 
 function browserSpeak(text) {
   if (!('speechSynthesis' in window)) {
-    showToast('Bu brauzer ovozli o‘qishni qo‘llamaydi.');
+    showToast('Brauzer ovozli o‘qishni qo‘llamaydi.');
     return;
   }
 
@@ -184,55 +197,100 @@ function browserSpeak(text) {
   synth.cancel();
 
   const utterance = new SpeechSynthesisUtterance(text);
-  const voices = synth.getVoices();
 
-  const uzVoice = voices.find((voice) =>
-    voice.lang.toLowerCase().startsWith('uz')
-  );
-
-  if (uzVoice) {
-    utterance.voice = uzVoice;
-  }
-
-  utterance.lang = uzVoice ? uzVoice.lang : 'uz-UZ';
   utterance.rate = 0.9;
   utterance.pitch = 1;
+  utterance.volume = 1;
 
-  utterance.onstart = () => {
-    if (requestId !== speechRequestId) return;
+  let started = false;
 
-    speaking = true;
-    isPaused = false;
-    bubble.classList.add('speaking');
-
-    const playButton = $('bPlay');
-    if (playButton) playButton.textContent = '⏸ Pauza';
-  };
-
-  utterance.onend = () => {
-    if (requestId !== speechRequestId) return;
-
-    speaking = false;
-    isPaused = false;
-    bubble.classList.remove('speaking');
-
-    const playButton = $('bPlay');
-    if (playButton) playButton.textContent = '▶ Davom';
-  };
-
-  utterance.onerror = (event) => {
-    if (requestId !== speechRequestId) return;
-    if (event.error === 'canceled' || event.error === 'interrupted') {
+  function startSpeaking() {
+    if (started || requestId !== speechRequestId) {
       return;
     }
 
-    speaking = false;
-    isPaused = false;
-    bubble.classList.remove('speaking');
-    showToast('Brauzer ovozni o‘qiy olmadi.');
-  };
+    started = true;
 
-  synth.speak(utterance);
+    const voices = synth.getVoices();
+
+    const voice =
+      voices.find(v => v.lang.toLowerCase() === 'uz-uz') ||
+      voices.find(v => v.lang.toLowerCase().startsWith('uz')) ||
+      voices.find(v => v.lang.toLowerCase().startsWith('ru')) ||
+      voices.find(v => v.lang.toLowerCase().startsWith('en'));
+
+    if (voice) {
+      utterance.voice = voice;
+      utterance.lang = voice.lang;
+    } else {
+      utterance.lang = 'uz-UZ';
+    }
+
+    utterance.onstart = () => {
+      if (requestId !== speechRequestId) return;
+
+      speaking = true;
+      isPaused = false;
+      bubble.classList.add('speaking');
+
+      const playButton = $('bPlay');
+
+      if (playButton) {
+        playButton.textContent = '⏸ Pauza';
+      }
+    };
+
+    utterance.onend = () => {
+      if (requestId !== speechRequestId) return;
+
+      speaking = false;
+      isPaused = false;
+      bubble.classList.remove('speaking');
+
+      const playButton = $('bPlay');
+
+      if (playButton) {
+        playButton.textContent = '▶ Davom';
+      }
+    };
+
+    utterance.onerror = (event) => {
+      if (requestId !== speechRequestId) return;
+
+      if (
+        event.error === 'canceled' ||
+        event.error === 'interrupted'
+      ) {
+        return;
+      }
+
+      speaking = false;
+      isPaused = false;
+      bubble.classList.remove('speaking');
+
+      console.error('Brauzer ovoz xatosi:', event.error);
+
+      showToast(
+        'Ovoz ishlamadi. Telefonning TTS sozlamasini tekshiring.'
+      );
+    };
+
+    synth.speak(utterance);
+  }
+
+  if (synth.getVoices().length > 0) {
+    startSpeaking();
+  } else {
+    synth.addEventListener('voiceschanged', startSpeaking, {
+      once: true
+    });
+
+    setTimeout(() => {
+      if (requestId === speechRequestId) {
+        startSpeaking();
+      }
+    }, 1000);
+  }
 }
 
 function toggleSpeech() {
@@ -241,7 +299,11 @@ function toggleSpeech() {
     isPaused = true;
 
     const playButton = $('bPlay');
-    if (playButton) playButton.textContent = '▶ Davom';
+
+    if (playButton) {
+      playButton.textContent = '▶ Davom';
+    }
+
     return;
   }
 
@@ -251,9 +313,15 @@ function toggleSpeech() {
         isPaused = false;
 
         const playButton = $('bPlay');
-        if (playButton) playButton.textContent = '⏸ Pauza';
+
+        if (playButton) {
+          playButton.textContent = '⏸ Pauza';
+        }
       })
-      .catch(() => browserSpeak(currentAnswer));
+      .catch(() => {
+        currentAudioUrl = null;
+        browserSpeak(currentAnswer);
+      });
 
     return;
   }
@@ -270,13 +338,19 @@ function toggleSpeech() {
     isPaused = true;
 
     const playButton = $('bPlay');
-    if (playButton) playButton.textContent = '▶ Davom';
+
+    if (playButton) {
+      playButton.textContent = '▶ Davom';
+    }
   } else if (synth.paused) {
     synth.resume();
     isPaused = false;
 
     const playButton = $('bPlay');
-    if (playButton) playButton.textContent = '⏸ Pauza';
+
+    if (playButton) {
+      playButton.textContent = '⏸ Pauza';
+    }
   } else if (currentAnswer) {
     speakText(currentAnswer, currentAudioUrl);
   }
@@ -288,7 +362,10 @@ audio.addEventListener('ended', () => {
   bubble.classList.remove('speaking');
 
   const playButton = $('bPlay');
-  if (playButton) playButton.textContent = '▶ Davom';
+
+  if (playButton) {
+    playButton.textContent = '▶ Davom';
+  }
 });
 
 audio.addEventListener('error', () => {
@@ -310,6 +387,7 @@ viewport.addEventListener('pointerdown', (event) => {
   if (event.target.closest('button, input, article')) return;
 
   pointer = event.pointerId;
+
   lastPoint = {
     x: event.clientX,
     y: event.clientY
@@ -338,6 +416,7 @@ function endDrag(event) {
 
   pointer = null;
   lastPoint = null;
+
   viewport.classList.remove('drag');
 }
 
@@ -347,11 +426,11 @@ viewport.addEventListener('pointercancel', endDrag);
 viewport.addEventListener('wheel', (event) => {
   event.preventDefault();
 
-  const next = camera.scale * (
-    event.deltaY > 0 ? 0.92 : 1.08
-  );
+  const next = camera.scale *
+    (event.deltaY > 0 ? 0.92 : 1.08);
 
   camera.scale = Math.max(0.55, Math.min(1.6, next));
+
   applyCamera();
 }, { passive: false });
 
@@ -359,11 +438,18 @@ function resetBoard() {
   stopSpeech();
 
   historyItems = [];
+
   saveHistory();
   renderHistory();
 
   menu.hidden = true;
-  camera = { x: 0, y: 0, scale: 1 };
+
+  camera = {
+    x: 0,
+    y: 0,
+    scale: 1
+  };
+
   applyCamera();
 
   showToast('Yangi doska ochildi.');
@@ -387,6 +473,7 @@ $('bPlus').addEventListener('click', () => {
 
 $('imageInput').addEventListener('change', async (event) => {
   const file = event.target.files?.[0];
+
   if (!file) return;
 
   if (!file.type.startsWith('image/')) {
@@ -439,6 +526,7 @@ $('bMic').addEventListener('click', () => {
   }
 
   recognition = new SpeechRecognition();
+
   recognition.lang = 'uz-UZ';
   recognition.interimResults = false;
   recognition.maxAlternatives = 1;
@@ -469,15 +557,18 @@ $('bMenu').addEventListener('click', () => {
 
   const heading = document.createElement('p');
   heading.textContent = 'Tarix — oldingi javoblar';
+
   menu.append(heading);
 
   if (!historyItems.length) {
     const empty = document.createElement('p');
     empty.textContent = 'Hozircha tarix bo‘sh.';
+
     menu.append(empty);
   } else {
     [...historyItems].reverse().forEach((item) => {
       const button = document.createElement('button');
+
       button.type = 'button';
       button.textContent =
         (item.prompt || 'Rasm tahlili').slice(0, 70);
@@ -486,6 +577,7 @@ $('bMenu').addEventListener('click', () => {
         stopSpeech();
 
         answers.replaceChildren(createCard(item, 0));
+
         currentAnswer = item.text || '';
         currentAudioUrl = item.audio || null;
 
@@ -497,13 +589,16 @@ $('bMenu').addEventListener('click', () => {
   }
 
   const close = document.createElement('button');
+
   close.type = 'button';
   close.textContent = 'Yopish';
+
   close.onclick = () => {
     menu.hidden = true;
   };
 
   menu.append(close);
+
   menu.hidden = !menu.hidden;
 });
 
@@ -515,6 +610,7 @@ async function ask(prompt, image = null) {
 
   sendBtn.disabled = true;
   sendBtn.textContent = '…';
+
   stopSpeech();
 
   try {
@@ -559,6 +655,7 @@ async function ask(prompt, image = null) {
     currentAudioUrl = item.audio;
 
     speakText(item.text, item.audio);
+
     showToast('Javob tayyor.');
   } catch (error) {
     showToast(error.message || 'Xatolik yuz berdi.');
@@ -580,6 +677,7 @@ renderHistory();
 
 if (historyItems.length) {
   const last = historyItems[historyItems.length - 1];
+
   currentAnswer = last.text || '';
   currentAudioUrl = last.audio || null;
 } else {
@@ -589,6 +687,7 @@ if (historyItems.length) {
 
 bubble.style.left = '30px';
 bubble.style.top = '30px';
+
 answers.style.pointerEvents = 'auto';
 
 applyCamera();
