@@ -16,23 +16,31 @@
       <span class="brand-dot">●</span>
       <strong>Bubble AI</strong>
     </div>
+
     <div class="top-actions">
-      <button id="bMenu" type="button" aria-label="Tarix">☰ Tarix</button>
+      <button id="bMenu" type="button">☰ Tarix</button>
       <button id="bNew" type="button">＋ Yangi doska</button>
     </div>
   </header>
 
   <main id="viewport">
     <div id="world">
-      <svg id="wb"></svg>
-      <div id="bubble" aria-label="Bubble">
-        <div class="eyes">
-          <div class="eye" id="eL"></div>
-          <div class="eye" id="eR"></div>
-        </div>
-        <div id="mouth"></div>
-      </div>
+      <svg id="wb" aria-label="Chizish doskasi"></svg>
       <section id="answers" aria-live="polite"></section>
+    </div>
+
+    <div id="zoomControls" aria-label="Doska masshtabi">
+      <button id="bZoomIn" type="button" aria-label="Kattalashtirish">＋</button>
+      <button id="bZoomOut" type="button" aria-label="Kichraytirish">−</button>
+      <button id="bZoomReset" type="button" aria-label="Masshtabni tiklash">⤢</button>
+    </div>
+
+    <div id="bubble" aria-label="Bubble AI">
+      <div class="eyes">
+        <div class="eye" id="eL"></div>
+        <div class="eye" id="eR"></div>
+      </div>
+      <div id="mouth"></div>
     </div>
   </main>
 
@@ -41,14 +49,14 @@
 
   <footer id="dock">
     <div class="row voice-controls">
-      <button class="k" id="bReplay" type="button" aria-label="Qayta eshitish">↻ Qayta eshitish</button>
-      <button class="k main" id="bPlay" type="button" aria-label="Pauza yoki davom ettirish">⏸ Pauza</button>
+      <button class="k" id="bReplay" type="button">↻ Qayta eshitish</button>
+      <button class="k main" id="bPlay" type="button">⏸ Pauza</button>
     </div>
 
     <form class="in" id="form">
       <input id="imageInput" type="file" accept="image/*" hidden>
       <button type="button" class="k sm" id="bPlus" aria-label="Rasm qo‘shish">＋</button>
-      <input id="q" maxlength="400" autocomplete="off" placeholder="Savolingizni yozing..." aria-label="Savol">
+      <input id="q" type="text" maxlength="400" autocomplete="off" placeholder="Savolingizni yozing..." aria-label="Savol">
       <button type="button" class="k sm" id="bMic" aria-label="Ovoz orqali yozish">🎙</button>
       <button class="go" id="go" type="submit" aria-label="Yuborish">➤</button>
     </form>
