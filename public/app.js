@@ -25,7 +25,6 @@ let camera = { x: 0, y: 0, scale: 1 };
 let speechRequestId = 0;
 let emotionTimer = null;
 
-// Doskada yozish holati
 let writingTimer = null;
 let writingRun = 0;
 let writeX = 150;
@@ -57,10 +56,7 @@ function setEmotion(emotion = '') {
   clearTimeout(emotionTimer);
 
   bubble.classList.remove(
-    'thinking',
-    'happy',
-    'surprised',
-    'sad'
+    'thinking', 'happy', 'surprised', 'sad'
   );
 
   if (emotion) bubble.classList.add(emotion);
@@ -144,11 +140,7 @@ function createCard(item, index) {
   pause.type = 'button';
   pause.className = 'k';
   pause.textContent = '⏯';
-  pause.setAttribute(
-    'aria-label',
-    'Pauza yoki davom ettirish'
-  );
-
+  pause.setAttribute('aria-label', 'Pauza yoki davom ettirish');
   pause.onclick = toggleSpeech;
 
   controls.append(replay, pause);
@@ -182,7 +174,7 @@ function renderHistory() {
 }
 
 // ----------------------------------
-// DOSKADA YOZISHNI TO‘XTATISH
+// DOSKADA CHIZISHNI TO‘XTATISH
 // ----------------------------------
 
 function stopWriting() {
@@ -194,46 +186,31 @@ function stopWriting() {
   }
 
   const dot = document.getElementById('writing-dot');
-
   if (dot) dot.remove();
 }
 
 // ----------------------------------
-// JAVOBNI DOSKAGA HARAKATLANIB YOZISH
+// DOSKAGA MATN YOZISH
 // ----------------------------------
 
-function writeOnBoard(text) {
-  stopWriting();
-
-  const run = writingRun;
-
-  // Oldingi javob kartalarini olib tashlash
-  answers.replaceChildren();
-
-  // Oldingi yozuv nuqtasini olib tashlash
-  const oldDot = document.getElementById('writing-dot');
-
-  if (oldDot) oldDot.remove();
+function writeTextOnBoard(text, startX, startY, run, onDone) {
+  if (run !== writingRun) return;
 
   const content = String(text || '').trim();
 
   if (!content) {
-    showToast('Doskaga yoziladigan javob yo‘q.');
+    if (onDone) onDone();
     return;
   }
 
-  // Matnni qatorlarga ajratish
   const maxChars = 34;
   const lines = [];
+  let line = '';
 
-  for (const originalLine of content.split(/\n/)) {
-    const words = originalLine.split(/\s+/);
-    let line = '';
-
-    for (const word of words) {
+  for (const originalLine of content.split('\n')) {
+    for (const word of originalLine.split(/\s+/)) {
       if (!word) continue;
 
-      // Juda uzun so‘zlarni ham bo‘lib yozish
       if (word.length > maxChars) {
         if (line) {
           lines.push(line);
@@ -247,9 +224,7 @@ function writeOnBoard(text) {
         continue;
       }
 
-      const candidate = line
-        ? `${line} ${word}`
-        : word;
+      const candidate = line ? `${line} ${word}` : word;
 
       if (candidate.length > maxChars && line) {
         lines.push(line);
@@ -259,122 +234,258 @@ function writeOnBoard(text) {
       }
     }
 
-    if (line) lines.push(line);
-    if (!words.length) lines.push('');
+    if (line) {
+      lines.push(line);
+      line = '';
+    }
   }
 
-  if (!lines.length) return;
+  if (!lines.length) {
+    if (onDone) onDone();
+    return;
+  }
 
-  const startX = writeX;
-  const startY = writeY;
   const lineHeight = 42;
-  const fontSize = 27;
-
-  // Har bir qator uchun alohida SVG yozuvi
-  const textNodes = lines.map((line, index) => {
+  const nodes = lines.map((value, index) => {
     const node = document.createElementNS(SVG_NS, 'text');
 
     node.setAttribute('x', startX);
     node.setAttribute('y', startY + index * lineHeight);
-    node.setAttribute('font-size', fontSize);
+    node.setAttribute('font-size', '27');
     node.setAttribute('font-family', 'Segoe UI, sans-serif');
-    node.setAttribute('font-weight', '500');
     node.setAttribute('fill', '#f1f5f9');
     node.setAttribute('xml:space', 'preserve');
 
-    node.textContent = '';
-
     svg.appendChild(node);
 
-    return node;
+    return { node, value };
   });
 
-  // Qora nuqta — yozayotgan qalam uchi
   const dot = document.createElementNS(SVG_NS, 'circle');
-
   dot.id = 'writing-dot';
   dot.setAttribute('r', '4');
-  dot.setAttribute('cx', startX);
-  dot.setAttribute('cy', startY - 8);
   dot.setAttribute('fill', '#050505');
   dot.setAttribute('stroke', '#ffffff');
   dot.setAttribute('stroke-width', '0.8');
 
   svg.appendChild(dot);
 
-  let lineIndex = 0;
+  let row = 0;
   let charIndex = 0;
 
-  // Taxminiy harf kengliklari
-  function estimateCharWidth(char) {
-    if (char === ' ') return 8;
-    if ('ilI.,!:;\'|'.includes(char)) return 7;
-    if ('mwMW@'.includes(char)) return 23;
-    return 15;
-  }
-
-  function nextCharacter() {
+  function step() {
     if (run !== writingRun) return;
 
-    // Keyingi qatorga o‘tish
     while (
-      lineIndex < lines.length &&
-      charIndex >= lines[lineIndex].length
+      row < nodes.length &&
+      charIndex >= nodes[row].value.length
     ) {
-      lineIndex++;
+      row++;
       charIndex = 0;
     }
 
-    // Yozish tugadi
-    if (lineIndex >= lines.length) {
+    if (row >= nodes.length) {
       dot.remove();
       writingTimer = null;
 
-      writeY = startY + lines.length * lineHeight + 35;
-
-      // Doskaning pastki qismiga yetganda yangi ustundan boshlash
-      if (writeY > 3200) {
-        writeX += 650;
-        writeY = 220;
-      }
-
-      showHappy();
+      if (onDone) onDone();
       return;
     }
 
-    const line = lines[lineIndex];
-    const char = line[charIndex];
-    const node = textNodes[lineIndex];
-
-    // Harfni bittadan ko‘rsatish
-    node.textContent += char;
-
-    // Nuqtaning joyini hozirgacha yozilgan belgilar bo‘yicha hisoblash
-    let offsetX = 0;
-
-    for (let i = 0; i <= charIndex; i++) {
-      offsetX += estimateCharWidth(line[i]);
-    }
-
-    const dotX = startX + offsetX;
-    const dotY = startY + lineIndex * lineHeight - 8;
-
-    dot.setAttribute('cx', dotX);
-    dot.setAttribute('cy', dotY);
-
-    // Bubble yozayotgan nuqta yoniga yuradi
-    bubble.style.left = `${Math.max(10, dotX + 16)}px`;
-    bubble.style.top = `${Math.max(10, dotY - 48)}px`;
+    const item = nodes[row];
+    const char = item.value[charIndex];
 
     charIndex++;
+    item.node.textContent = item.value.slice(0, charIndex);
 
-    // Harflar sekinroq, bo‘sh joylar tezroq yoziladi
-    const delay = char === ' ' ? 35 : 65;
+    // Nuqta haqiqiy SVG matn kengligiga qarab harakatlanadi.
+    const width = item.node.getComputedTextLength();
 
-    writingTimer = setTimeout(nextCharacter, delay);
+    dot.setAttribute('cx', startX + width + 3);
+    dot.setAttribute('cy', startY + row * lineHeight - 8);
+
+    writingTimer = setTimeout(step, char === ' ' ? 35 : 65);
   }
 
-  nextCharacter();
+  step();
+}
+
+// ----------------------------------
+// SHAKL CHIZISH
+// ----------------------------------
+
+function drawShape(shape, startX, startY, run, onDone) {
+  if (run !== writingRun) return;
+
+  let path;
+
+  if (shape === 'circle') {
+    path = document.createElementNS(SVG_NS, 'circle');
+    path.setAttribute('cx', startX + 75);
+    path.setAttribute('cy', startY + 75);
+    path.setAttribute('r', '70');
+  } else {
+    path = document.createElementNS(SVG_NS, 'path');
+
+    const paths = {
+      square:
+        `M ${startX} ${startY} h 140 v 140 h -140 Z`,
+
+      rectangle:
+        `M ${startX} ${startY} h 190 v 110 h -190 Z`,
+
+      triangle:
+        `M ${startX} ${startY + 130} ` +
+        `L ${startX + 75} ${startY} ` +
+        `L ${startX + 150} ${startY + 130} Z`
+    };
+
+    path.setAttribute('d', paths[shape]);
+  }
+
+  path.setAttribute('fill', 'none');
+  path.setAttribute('stroke', '#f1f5f9');
+  path.setAttribute('stroke-width', '4');
+  path.setAttribute('stroke-linecap', 'round');
+  path.setAttribute('stroke-linejoin', 'round');
+
+  svg.appendChild(path);
+
+  // Chiziq boshida ko‘rinmaydi, nuqta yurgan sari ochiladi.
+  const total = path.getTotalLength();
+
+  path.style.strokeDasharray = `${total}`;
+  path.style.strokeDashoffset = `${total}`;
+
+  const dot = document.createElementNS(SVG_NS, 'circle');
+  dot.id = 'writing-dot';
+  dot.setAttribute('r', '4');
+  dot.setAttribute('fill', '#050505');
+  dot.setAttribute('stroke', '#ffffff');
+  dot.setAttribute('stroke-width', '0.8');
+
+  svg.appendChild(dot);
+
+  let distance = 0;
+  const speed = 3;
+
+  function step() {
+    if (run !== writingRun) return;
+
+    distance = Math.min(total, distance + speed);
+
+    path.style.strokeDashoffset = `${total - distance}`;
+
+    const point = path.getPointAtLength(distance);
+
+    dot.setAttribute('cx', point.x);
+    dot.setAttribute('cy', point.y);
+
+    if (distance < total) {
+      writingTimer = setTimeout(step, 16);
+      return;
+    }
+
+    dot.remove();
+    writingTimer = null;
+
+    if (onDone) onDone();
+  }
+
+  step();
+}
+
+// ----------------------------------
+// JAVOBNI DOSKAGA YOZISH VA CHIZISH
+// ----------------------------------
+
+function writeOnBoard(text, prompt = '') {
+  stopWriting();
+
+  const run = writingRun;
+
+  answers.replaceChildren();
+
+  const content = String(text || '').trim();
+
+  if (!content) {
+    showToast('Doskaga yoziladigan javob yo‘q.');
+    return;
+  }
+
+  // Bubble yozish jarayonida doska bo‘ylab ko‘chmaydi.
+  bubble.style.left = '30px';
+  bubble.style.top = '30px';
+
+  const request = String(prompt || '').toLowerCase();
+
+  // Faqat chizish so‘rovi bo‘lsa shakl chiziladi.
+  const asksToDraw =
+    /\b(chiz|chizing|chizib ber|draw|tasvirla)\b/i.test(request);
+
+  let shape = null;
+
+  if (asksToDraw) {
+    if (/kvadrat|square/.test(request)) {
+      shape = 'square';
+    } else if (/uchburchak|triangle/.test(request)) {
+      shape = 'triangle';
+    } else if (/to‘g‘ri to‘rtburchak|to'g'ri to'rtburchak|rectangle/.test(request)) {
+      shape = 'rectangle';
+    } else if (/doira|aylana|circle/.test(request)) {
+      shape = 'circle';
+    }
+  }
+
+  const startX = writeX;
+  const startY = writeY;
+
+  function finish() {
+    if (run !== writingRun) return;
+
+    writeY += 250;
+
+    if (writeY > 3200) {
+      writeX += 650;
+      writeY = 220;
+    }
+
+    showHappy();
+  }
+
+  function writeAnswer(y) {
+    writeTextOnBoard(content, startX, y, run, finish);
+  }
+
+  if (!shape) {
+    writeAnswer(startY);
+    return;
+  }
+
+  drawShape(shape, startX, startY, run, () => {
+    if (run !== writingRun) return;
+
+    const names = {
+      square: 'Kvadrat',
+      rectangle: 'To‘g‘ri to‘rtburchak',
+      triangle: 'Uchburchak',
+      circle: 'Doira'
+    };
+
+    const label = document.createElementNS(SVG_NS, 'text');
+
+    label.setAttribute('x', startX);
+    label.setAttribute('y', startY + 190);
+    label.setAttribute('font-size', '27');
+    label.setAttribute('font-family', 'Segoe UI, sans-serif');
+    label.setAttribute('fill', '#f1f5f9');
+    label.textContent = names[shape];
+
+    svg.appendChild(label);
+
+    // Shakl va uning nomidan keyin javob yoziladi.
+    writeAnswer(startY + 240);
+  });
 }
 
 // ----------------------------------
@@ -573,23 +684,17 @@ function toggleSpeech() {
     isPaused = true;
 
     const playButton = $('bPlay');
-
     if (playButton) playButton.textContent = '▶ Davom';
 
     return;
   }
 
-  if (
-    audio.src &&
-    audio.paused &&
-    audio.currentTime > 0
-  ) {
+  if (audio.src && audio.paused && audio.currentTime > 0) {
     audio.play()
       .then(() => {
         isPaused = false;
 
         const playButton = $('bPlay');
-
         if (playButton) playButton.textContent = '⏸ Pauza';
       })
       .catch(() => {
@@ -612,14 +717,12 @@ function toggleSpeech() {
     isPaused = true;
 
     const playButton = $('bPlay');
-
     if (playButton) playButton.textContent = '▶ Davom';
   } else if (synth.paused) {
     synth.resume();
     isPaused = false;
 
     const playButton = $('bPlay');
-
     if (playButton) playButton.textContent = '⏸ Pauza';
   } else if (currentAnswer) {
     speakText(currentAnswer, currentAudioUrl);
@@ -634,7 +737,6 @@ audio.addEventListener('ended', () => {
   setEmotion('');
 
   const playButton = $('bPlay');
-
   if (playButton) playButton.textContent = '▶ Davom';
 });
 
@@ -722,7 +824,6 @@ function resetBoard() {
   saveHistory();
   renderHistory();
 
-  // Doskadagi oldingi yozuvlarni o‘chirish
   svg.replaceChildren();
 
   writeX = 150;
@@ -734,7 +835,6 @@ function resetBoard() {
   menu.hidden = true;
 
   camera = { x: 0, y: 0, scale: 1 };
-
   applyCamera();
 
   showToast('Yangi doska ochildi.');
@@ -866,7 +966,6 @@ $('bMenu').addEventListener('click', () => {
   if (!historyItems.length) {
     const empty = document.createElement('p');
     empty.textContent = 'Hozircha tarix bo‘sh.';
-
     menu.append(empty);
   } else {
     [...historyItems].reverse().forEach((item) => {
@@ -881,11 +980,10 @@ $('bMenu').addEventListener('click', () => {
         stopSpeech();
         setEmotion('');
 
-        // Tarixdagi javobni doskaga qayta yozish
         currentAnswer = item.text || '';
         currentAudioUrl = item.audio || null;
 
-        writeOnBoard(currentAnswer);
+        writeOnBoard(currentAnswer, item.prompt || '');
         menu.hidden = true;
       };
 
@@ -894,7 +992,6 @@ $('bMenu').addEventListener('click', () => {
   }
 
   const close = document.createElement('button');
-
   close.type = 'button';
   close.textContent = 'Yopish';
 
@@ -963,16 +1060,15 @@ async function ask(prompt, image = null) {
     currentAnswer = item.text;
     currentAudioUrl = item.audio;
 
-    // Javob kartada emas, doskada yoziladi
-    writeOnBoard(item.text);
+    // So‘rovni ham beramiz: chizish kerakligini shu orqali aniqlaydi.
+    writeOnBoard(item.text, item.prompt);
 
-    // Ovoz yozish animatsiyasi bilan bir vaqtda boshlanadi
+    // Ovoz yozish bilan bir paytda boshlanadi.
     speakText(item.text, item.audio);
 
     showToast('Bubble doskaga yozmoqda.');
   } catch (error) {
     showSad();
-
     showToast(error.message || 'Xatolik yuz berdi.');
   } finally {
     sendBtn.disabled = false;
