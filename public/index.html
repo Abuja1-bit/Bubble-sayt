@@ -1,60 +1,71 @@
+
 <!DOCTYPE html>
 <html lang="uz">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#0d0f17">
-  <title>Bubble AI</title>
+  <title>Bubble AI — Aqlli o‘qituvchi</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
   <header class="topbar">
     <div class="brand">
       <span class="brand-dot">●</span>
       <strong>Bubble AI</strong>
     </div>
     <div class="top-actions">
-      <button id="bMenu" type="button">☰ Tarix</button>
+      <button id="bMenu" type="button">📚 Tarix</button>
       <button id="bNew" type="button">＋ Yangi doska</button>
     </div>
   </header>
 
   <main id="viewport">
     <div id="world">
-      <svg id="wb" aria-label="Chizish doskasi"></svg>
-      <section id="answers" aria-live="polite"></section>
+      <svg id="wb" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div id="answers"></div>
     </div>
 
+    <!-- Bubble doskadan mustaqil harakatlanadi -->
     <div id="bubble" aria-label="Bubble AI">
       <div class="eyes">
-        <div class="eye" id="eL"></div>
-        <div class="eye" id="eR"></div>
+        <span class="eye"></span>
+        <span class="eye"></span>
       </div>
       <div id="mouth"></div>
     </div>
   </main>
 
   <div id="toast" role="status"></div>
-  <div id="menu" hidden></div>
+
+  <aside id="menu" hidden></aside>
 
   <footer id="dock">
     <div class="row voice-controls">
-      <button class="k" id="bPrevious" type="button" aria-label="Oldingi javob">◀ Oldingi</button>
+      <button class="k" id="bPrevious" type="button">⏮ Oldingi</button>
       <button class="k main" id="bPlay" type="button">▶ Davom</button>
-      <button class="k" id="bNext" type="button" aria-label="Keyingi javob">Keyingi ▶</button>
+      <button class="k" id="bNext" type="button">Keyingi ⏭</button>
       <button class="k" id="bReplay" type="button">↻</button>
     </div>
 
-    <form class="in" id="form">
-      <input id="imageInput" type="file" accept="image/*" hidden>
-      <button type="button" class="k sm" id="bPlus" aria-label="Rasm qo‘shish">＋</button>
-      <input id="q" type="text" maxlength="400" autocomplete="off" placeholder="Savolingizni yozing..." aria-label="Savol">
-      <button type="button" class="k sm" id="bMic" aria-label="Ovoz orqali yozish">🎙</button>
+    <form id="form" class="in">
+      <button class="k sm" id="bPlus" type="button" aria-label="Rasm qo‘shish">＋</button>
+      <input
+        id="q"
+        type="text"
+        placeholder="Bubble’dan nimani so‘ramoqchisiz?"
+        autocomplete="off"
+      >
+      <button class="k sm" id="bMic" type="button" aria-label="Mikrofon">🎙</button>
       <button class="go" id="go" type="submit" aria-label="Yuborish">➤</button>
     </form>
+
+    <input id="imageInput" type="file" accept="image/*" hidden>
   </footer>
 
-  <audio id="au" preload="auto"></audio>
+  <audio id="au" preload="none"></audio>
+
   <script src="app.js"></script>
 </body>
 </html>
