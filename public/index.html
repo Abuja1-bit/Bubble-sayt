@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="uz">
 <head>
@@ -7,8 +6,6 @@
   <meta name="theme-color" content="#0d0f17">
   <title>Bubble AI</title>
   <link rel="stylesheet" href="style.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"></script>
 </head>
 <body>
   <header class="topbar">
@@ -16,7 +13,6 @@
       <span class="brand-dot">●</span>
       <strong>Bubble AI</strong>
     </div>
-
     <div class="top-actions">
       <button id="bMenu" type="button">☰ Tarix</button>
       <button id="bNew" type="button">＋ Yangi doska</button>
@@ -27,12 +23,6 @@
     <div id="world">
       <svg id="wb" aria-label="Chizish doskasi"></svg>
       <section id="answers" aria-live="polite"></section>
-    </div>
-
-    <div id="zoomControls" aria-label="Doska masshtabi">
-      <button id="bZoomIn" type="button" aria-label="Kattalashtirish">＋</button>
-      <button id="bZoomOut" type="button" aria-label="Kichraytirish">−</button>
-      <button id="bZoomReset" type="button" aria-label="Masshtabni tiklash">⤢</button>
     </div>
 
     <div id="bubble" aria-label="Bubble AI">
@@ -49,8 +39,10 @@
 
   <footer id="dock">
     <div class="row voice-controls">
-      <button class="k" id="bReplay" type="button">↻ Qayta eshitish</button>
-      <button class="k main" id="bPlay" type="button">⏸ Pauza</button>
+      <button class="k" id="bPrevious" type="button" aria-label="Oldingi javob">◀ Oldingi</button>
+      <button class="k main" id="bPlay" type="button">▶ Davom</button>
+      <button class="k" id="bNext" type="button" aria-label="Keyingi javob">Keyingi ▶</button>
+      <button class="k" id="bReplay" type="button">↻</button>
     </div>
 
     <form class="in" id="form">
