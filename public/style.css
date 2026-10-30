@@ -1,3 +1,4 @@
+
 :root {
   --bg: #0d0f17;
   --panel: #171a26;
@@ -155,31 +156,12 @@ button:disabled {
   overflow-wrap: anywhere;
 }
 
-.answer-title {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 10px;
-  font-weight: 700;
-}
-
-.answer-text {
-  margin: 0 0 10px;
-  font-size: 15px;
-  line-height: 1.65;
-}
-
-.answer-text:last-child {
-  margin-bottom: 0;
-}
-
-/* Bubble */
+/* Bubble — doskadan mustaqil harakat */
 #bubble {
   position: absolute;
-  z-index: 20;
-  top: 18px;
-  left: 16px;
+  z-index: 90;
+  top: 0;
+  left: 0;
   width: 78px;
   height: 78px;
   border-radius: 50%;
@@ -203,9 +185,11 @@ button:disabled {
   animation: bubble-float 3s ease-in-out infinite;
   transform-origin: center;
   transition:
+    left .75s cubic-bezier(.2,.8,.2,1),
+    top .75s cubic-bezier(.2,.8,.2,1),
     filter .25s ease,
-    box-shadow .25s ease,
-    border-radius .25s ease;
+    box-shadow .25s ease;
+  will-change: left, top, transform;
 }
 
 .eyes {
@@ -297,7 +281,7 @@ button:disabled {
   filter: hue-rotate(150deg) brightness(.85);
 }
 
-/* Pastdagi boshqaruv paneli */
+/* Pastki boshqaruv paneli */
 #dock {
   position: fixed;
   z-index: 100;
@@ -387,6 +371,7 @@ button:disabled {
   font-size: 18px;
 }
 
+/* Xabar */
 #toast {
   position: fixed;
   z-index: 200;
@@ -407,6 +392,7 @@ button:disabled {
   transform: translate(-50%,0);
 }
 
+/* Tarix menyusi */
 #menu {
   position: fixed;
   z-index: 150;
@@ -514,4 +500,8 @@ button:disabled {
   .eyes {
     animation: none;
   }
+
+  #bubble {
+    transition: none;
   }
+}
