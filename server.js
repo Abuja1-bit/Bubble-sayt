@@ -5,24 +5,14 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { GoogleGenAI } from '@google/genai';
-import { ElevenLabsClient } from 'elevenlabs';
 
 dotenv.config();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3000;
 
-const VOICE_ID =
-  process.env.ELEVENLABS_VOICE_ID || '21m00Tcm4TlvDq8ikWAM';
-
 const ai = process.env.GEMINI_API_KEY
   ? new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY })
-  : null;
-
-const eleven = process.env.ELEVENLABS_API_KEY
-  ? new ElevenLabsClient({
-      apiKey: process.env.ELEVENLABS_API_KEY
-    })
   : null;
 
 const app = express();
@@ -64,12 +54,7 @@ app.post('/api/lesson', async (req, res) => {
       const data = String(image.data || '');
 
       if (
-        ![
-          'image/jpeg',
-          'image/png',
-          'image/webp',
-          'image/gif'
-        ].includes(mimeType) ||
+        !['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(mimeType) ||
         !data ||
         data.length > 10_000_000
       ) {
@@ -82,17 +67,14 @@ app.post('/api/lesson', async (req, res) => {
         {
           text:
             'Sen Bubble nomli aqlli o‘zbekcha yordamchisan. ' +
-            'Rasmni diqqat bilan tahlil qil va foydalanuvchiga ' +
-            'sodda, tushunarli, foydali o‘zbekcha javob ber.\n\n' +
-            'Savol: ' + (prompt || 'Ushbu rasmni tahlil qil.')
+            'Rasmni diqqat bilan tahlil qil va sodda, tushunarli ' +
+            'o‘zbekcha javob ber.\n\nSavol: ' +
+            (prompt || 'Ushbu rasmni tahlil qil.')
         },
         {
           inlineData: {
             mimeType,
-            data: data.replace(
-              /^data:image\/[^;]+;base64,/,
-              ''
-            )
+            data: data.replace(/^data:image\/[^;]+;base64,/, '')
           }
         }
       ];
@@ -109,7 +91,7 @@ app.post('/api/lesson', async (req, res) => {
 
       if (!groqKey) {
         return res.status(500).json({
-          error: 'GROQ_API_KEY Render Environment sozlamalarida yo‘q.'
+          error: 'GROQ_API_KEY Render sozlamalarida yo‘q.'
         });
       }
 
@@ -144,23 +126,15 @@ app.post('/api/lesson', async (req, res) => {
 
       if (!groqResponse.ok) {
         const detail = await groqResponse.text();
-
-        console.error(
-          'Groq xatosi:',
-          groqResponse.status,
-          detail
-        );
+        console.error('Groq xatosi:', groqResponse.status, detail);
 
         return res.status(502).json({
-          error:
-            'Groq AI javob bera olmadi. Render Logs bo‘limini tekshiring.'
+          error: 'Groq AI javob bera olmadi. Render Logs bo‘limini tekshiring.'
         });
       }
 
       const result = await groqResponse.json();
-
-      text =
-        result.choices?.[0]?.message?.content?.trim() || '';
+      text = result.choices?.[0]?.message?.content?.trim() || '';
     }
 
     if (!text) {
@@ -169,31 +143,51 @@ app.post('/api/lesson', async (req, res) => {
       });
     }
 
-    // OVOZ: ELEVENLABS
+    // OVOZ: NEURONAI
     let audio = null;
 
-    if (eleven && !quick) {
-      try {
-        const stream = await eleven.generate({
-          voice: VOICE_ID,
-          text,
-          model_id: 'eleven_multilingual_v2'
-        });
+    if (!quick) {
+      const neuronKey = process.env.NEURONAI_API_KEY;
 
-        const chunks = [];
+      if (!neuronKey) {
+        console.error('NEURONAI_API_KEY topilmadi.');
+      } else {
+        try {
+          const voiceResponse = await fetch(
+            'https://my.neuronai.uz/api/v1/tts/synthesize',
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${neuronKey}`
+              },
+              body: JSON.stringify({
+                voice_id: 'kamron',
+                text,
+                language: 'uz',
+                quality: 'standard'
+              })
+            }
+          );
 
-        for await (const chunk of stream) {
-          chunks.push(Buffer.from(chunk));
+          if (!voiceResponse.ok) {
+            const detail = await voiceResponse.text();
+            console.error(
+              'NeuronAI xatosi:',
+              voiceResponse.status,
+              detail
+            );
+          } else {
+            const audioBuffer = Buffer.from(
+              await voiceResponse.arrayBuffer()
+            );
+
+            audio = 'data:audio/wav;base64,' +
+              audioBuffer.toString('base64');
+          }
+        } catch (error) {
+          console.error('NeuronAI ovoz xatosi:', error.message);
         }
-
-        audio =
-          'data:audio/mpeg;base64,' +
-          Buffer.concat(chunks).toString('base64');
-      } catch (error) {
-        console.error(
-          'Ovoz yaratish xatosi:',
-          error.message
-        );
       }
     }
 
@@ -202,15 +196,11 @@ app.post('/api/lesson', async (req, res) => {
     console.error('AI xatosi:', error);
 
     return res.status(500).json({
-      error:
-        'AI bilan bog‘lanishda xato. Render Logs bo‘limini tekshiring.'
+      error: 'AI bilan bog‘lanishda xato. Render Logs bo‘limini tekshiring.'
     });
   }
 });
 
 app.listen(PORT, () => {
-  console.log(
-    'Bubble AI server ishga tushdi. Port:',
-    PORT
-  );
+  console.log('Bubble AI server ishga tushdi. Port:', PORT);
 });
