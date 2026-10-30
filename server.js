@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { GoogleGenAI } from '@google/genai';
+import { VoiceLab } from '@voicelab/sdk';
 
 dotenv.config();
 
@@ -14,6 +15,15 @@ const PORT = process.env.PORT || 3000;
 const ai = process.env.GEMINI_API_KEY
   ? new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY })
   : null;
+
+// VOICELAB
+const voiceLab = process.env.VOICELAB_API_KEY
+  ? new VoiceLab({ apiKey: process.env.VOICELAB_API_KEY })
+  : null;
+
+const voiceLabConfigured = Boolean(
+  voiceLab && process.env.VOICELAB_VOICE_ID
+);
 
 const app = express();
 
@@ -143,55 +153,74 @@ app.post('/api/lesson', async (req, res) => {
       });
     }
 
-    // OVOZ: NEURONAI
+    // OVOZ: VOICELAB ASOSIY, NEURONAI ZAXIRA
     let audio = null;
 
     if (!quick) {
-      const neuronKey = process.env.NEURONAI_API_KEY;
-
-      if (!neuronKey) {
-        console.error('NEURONAI_API_KEY topilmadi.');
-      } else {
+      if (voiceLabConfigured) {
         try {
-          const voiceResponse = await fetch(
-            'https://my.neuronai.uz/api/v1/tts/synthesize',
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${neuronKey}`
-              },
-              body: JSON.stringify({
-                voice_id: 'kamron',
-                text,
-                language: 'uz',
-                quality: 'standard'
-              })
-            }
-          );
+          const speech = await voiceLab.tts.synthesize({
+            text,
+            language: 'uz',
+            voiceId: process.env.VOICELAB_VOICE_ID
+          });
 
-          if (!voiceResponse.ok) {
-            const detail = await voiceResponse.text();
-            console.error(
-              'NeuronAI xatosi:',
-              voiceResponse.status,
-              detail
-            );
-          } else {
-            const audioBuffer = Buffer.from(
-              await voiceResponse.arrayBuffer()
-            );
+          audio = 'data:audio/wav;base64,' +
+            Buffer.from(speech.audio).toString('base64');
 
-            audio = 'data:audio/wav;base64,' +
-              audioBuffer.toString('base64');
-          }
         } catch (error) {
-          console.error('NeuronAI ovoz xatosi:', error.message);
+          console.error('VoiceLab TTS xatosi:', error.message);
+          // VoiceLab xato bersa, NeuronAI avtomatik chaqirilmaydi.
+        }
+      } else {
+        // VOICELAB SOZLANMAGAN BO‘LSA NEURONAI ZAXIRA
+        const neuronKey = process.env.NEURONAI_API_KEY;
+
+        if (!neuronKey) {
+          console.error('VoiceLab va NeuronAI sozlamalari topilmadi.');
+        } else {
+          try {
+            const voiceResponse = await fetch(
+              'https://my.neuronai.uz/api/v1/tts/synthesize',
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${neuronKey}`
+                },
+                body: JSON.stringify({
+                  voice_id: 'kamron',
+                  text,
+                  language: 'uz',
+                  quality: 'standard'
+                })
+              }
+            );
+
+            if (!voiceResponse.ok) {
+              const detail = await voiceResponse.text();
+              console.error(
+                'NeuronAI xatosi:',
+                voiceResponse.status,
+                detail
+              );
+            } else {
+              const audioBuffer = Buffer.from(
+                await voiceResponse.arrayBuffer()
+              );
+
+              audio = 'data:audio/wav;base64,' +
+                audioBuffer.toString('base64');
+            }
+          } catch (error) {
+            console.error('NeuronAI ovoz xatosi:', error.message);
+          }
         }
       }
     }
 
     return res.json({ text, audio });
+
   } catch (error) {
     console.error('AI xatosi:', error);
 
