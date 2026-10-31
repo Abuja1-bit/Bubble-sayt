@@ -188,7 +188,11 @@ button:disabled {
   align-items: center;
   justify-content: center;
   gap: 7px;
-  pointer-events: none;
+  pointer-events: auto;
+touch-action: none;
+cursor: grab;
+user-select: none;
+-webkit-user-select: none;
   animation: bubble-float 3s ease-in-out infinite;
   transform-origin: center;
   transition:
