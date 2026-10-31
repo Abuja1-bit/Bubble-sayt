@@ -54,6 +54,49 @@ function moveBubbleTo(x, y) {
   bubble.style.top = `${Math.max(8, Math.min(y, maxY))}px`;
 }
 
+let bubbleDragging = false;
+let bubbleMoved = false;
+let bubbleOffsetX = 0;
+let bubbleOffsetY = 0;
+
+bubble.addEventListener('pointerdown', event => {
+  bubbleDragging = true;
+  bubbleMoved = false;
+
+  const rect = bubble.getBoundingClientRect();
+
+  bubbleOffsetX = event.clientX - rect.left;
+  bubbleOffsetY = event.clientY - rect.top;
+
+  bubble.setPointerCapture(event.pointerId);
+  bubble.classList.add('happy', 'bubble-dragging');
+  event.preventDefault();
+});
+
+bubble.addEventListener('pointermove', event => {
+  if (!bubbleDragging) return;
+
+  bubbleMoved = true;
+
+  const rect = viewport.getBoundingClientRect();
+
+  moveBubbleTo(
+    event.clientX - rect.left - bubbleOffsetX,
+    event.clientY - rect.top - bubbleOffsetY
+  );
+});
+
+function stopBubbleDragging() {
+  if (!bubbleDragging) return;
+
+  bubbleDragging = false;
+  bubble.classList.remove('bubble-dragging');
+
+  setEmotion('');
+}
+
+bubble.addEventListener('pointerup', stopBubbleDragging);
+bubble.addEventListener('pointercancel', stopBubbleDragging);
 function bubbleCenter() {
   moveBubbleTo(
     (viewport.clientWidth - bubble.offsetWidth) / 2,
