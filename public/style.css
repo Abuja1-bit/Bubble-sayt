@@ -70,7 +70,14 @@ button:disabled {
   font-size: 22px;
   text-shadow: 0 0 14px #3b82f6;
 }
-
+.telegram-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--line);
+  flex: none;
+} 
 .top-actions {
   display: flex;
   align-items: center;
