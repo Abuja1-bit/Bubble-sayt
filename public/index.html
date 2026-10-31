@@ -69,5 +69,29 @@
   <audio id="au" preload="none"></audio>
 
   <script src="app.js"></script>
+  <script>
+(() => {
+  const webApp = window.Telegram && window.Telegram.WebApp;
+  const user = webApp && webApp.initDataUnsafe && webApp.initDataUnsafe.user;
+  const avatar = document.getElementById('telegramAvatar');
+  const dot = document.getElementById('brandDot');
+
+  if (webApp) {
+    webApp.ready();
+    webApp.expand();
+  }
+
+  if (user && user.photo_url) {
+    avatar.src = user.photo_url;
+    avatar.hidden = false;
+    dot.hidden = true;
+
+    avatar.addEventListener('error', () => {
+      avatar.hidden = true;
+      dot.hidden = false;
+    }, { once: true });
+  }
+})();
+  </script>
 </body>
 </html>
