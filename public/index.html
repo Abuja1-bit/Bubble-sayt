@@ -13,21 +13,25 @@
 
   <header class="topbar">
     <div class="brand">
-      <img id="telegramAvatar" class="telegram-avatar" alt="" hidden>
-      <span class="brand-dot" id="brandDot">●</span>
+      <button id="bProfile" class="profile-trigger" type="button" aria-label="Profil menyusi">
+        <img id="telegramAvatar" class="telegram-avatar" alt="" hidden>
+        <span class="brand-dot" id="brandDot">●</span>
+      </button>
       <strong>Bubble AI</strong>
     </div>
 
     <div class="top-actions">
-      <button id="bProfile" type="button" aria-label="Profil">👤</button>
       <button id="bMenu" type="button">📚 Tarix</button>
       <button id="bNew" type="button">＋ Yangi doska</button>
     </div>
   </header>
 
   <div id="profileMenu" hidden>
-    <div class="profile-heading">Profil sozlamalari</div>
+    <div class="profile-heading">Profil menyusi</div>
     <button id="bTheme" type="button">🌙 Tungi rejim</button>
+    <button id="bProfileInfo" type="button">👤 Profil ma’lumotlari</button>
+    <button id="bSettings" type="button">⚙️ Sozlamalar</button>
+    <button id="bHelp" type="button">❓ Yordam</button>
   </div>
 
   <main id="viewport">
@@ -106,8 +110,27 @@
     const themeButton = document.getElementById('bTheme');
     const themeColor = document.getElementById('themeColor');
 
-    profileButton.addEventListener('click', () => {
+    function closeProfileMenu() {
+      profileMenu.hidden = true;
+    }
+
+    profileButton.addEventListener('click', (event) => {
+      event.stopPropagation();
       profileMenu.hidden = !profileMenu.hidden;
+    });
+
+    profileMenu.addEventListener('click', (event) => {
+      event.stopPropagation();
+    });
+
+    document.addEventListener('click', (event) => {
+      if (
+        !profileMenu.hidden &&
+        !profileMenu.contains(event.target) &&
+        !profileButton.contains(event.target)
+      ) {
+        closeProfileMenu();
+      }
     });
 
     // KUN / TUN REJIMI
@@ -140,16 +163,25 @@
         document.body.dataset.theme === 'dark' ? 'light' : 'dark';
 
       applyTheme(nextTheme);
+      closeProfileMenu();
     });
 
-    document.addEventListener('click', (event) => {
-      if (
-        !profileMenu.contains(event.target) &&
-        !profileButton.contains(event.target)
-      ) {
-        profileMenu.hidden = true;
-      }
+    // HOZIRCHA TAYYORLANAYOTGAN BO‘LIMLAR
+    document.getElementById('bProfileInfo').addEventListener('click', () => {
+      closeProfileMenu();
+      alert('Profil ma’lumotlari bo‘limi keyingi bosqichda ulanadi.');
     });
+
+    document.getElementById('bSettings').addEventListener('click', () => {
+      closeProfileMenu();
+      alert('Sozlamalar bo‘limi keyingi bosqichda ulanadi.');
+    });
+
+    document.getElementById('bHelp').addEventListener('click', () => {
+      closeProfileMenu();
+      alert('Yordam bo‘limiga Telegram username keyin qo‘shiladi.');
+    });
+
   })();
   </script>
 
