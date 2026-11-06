@@ -1,871 +1,1366 @@
 
-:root {
-  --bg: #0d0f17;
-  --panel: #171a26;
-  --panel-2: #202536;
-  --line: #2a3042;
-  --key: #252b3c;
-  --ink: #edf2ff;
-  --mute: #94a3b8;
-  --blue: #4388ff;
-  --blue-2: #2563eb;
-  --shadow: 0 12px 35px rgba(0, 0, 0, .28);
-  --bubble-glow: rgba(59, 130, 246, .38);
-  box-sizing: border-box;
-}
-
-*,
-*::before,
-*::after {
-  box-sizing: inherit;
-  -webkit-tap-highlight-color: transparent;
-}
-
-html,
-body {
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  overflow: hidden;
-  overscroll-behavior: none;
-}
-
-body {
-  background: var(--bg);
-  color: var(--ink);
-  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  transition: background .25s ease, color .25s ease;
-}
-
-body[data-theme="light"] {
-  --bg: #f4f6fb;
-  --panel: #ffffff;
-  --panel-2: #eef2f8;
-  --line: #dce3ef;
-  --key: #e8edf6;
-  --ink: #182235;
-  --mute: #64748b;
-  --blue: #3478f6;
-  --blue-2: #245fd0;
-  --shadow: 0 12px 35px rgba(35, 50, 80, .12);
-  --bubble-glow: rgba(59, 130, 246, .24);
-}
-
-/* TOP BAR */
-
-.topbar {
-  position: fixed;
-  z-index: 30;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 66px;
-  padding: 0 15px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  background: var(--panel);
-  border-bottom: 1px solid var(--line);
-}
-
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-  font-size: 18px;
-  letter-spacing: -.4px;
-}
-
-.brand strong {
-  font-weight: 800;
-}
-
-.profile-trigger {
-  width: 39px;
-  height: 39px;
-  padding: 0;
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-  border: 1px solid var(--line);
-  border-radius: 50%;
-  background: var(--panel-2);
-  color: var(--blue);
-  overflow: hidden;
-  cursor: pointer;
-}
-
-.telegram-avatar {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 50%;
-}
-
-.brand-dot {
-  font-size: 19px;
-}
-
-.top-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-#bNew {
-  min-height: 39px;
-  padding: 0 13px;
-  border: 0;
-  border-radius: 12px;
-  background: var(--blue);
-  color: #fff;
-  font-size: 13px;
-  font-weight: 700;
-  white-space: nowrap;
-  cursor: pointer;
-  box-shadow: 0 5px 15px var(--bubble-glow);
-}
-
-#bNew:active,
-button:active {
-  transform: scale(.97);
-}
-
-/* PROFILE MENU */
-
-#profileMenu {
-  position: fixed;
-  z-index: 100;
-  top: 58px;
-  left: 12px;
-  width: min(265px, calc(100vw - 24px));
-  padding: 10px;
-  border: 1px solid var(--line);
-  border-radius: 17px;
-  background: var(--panel);
-  box-shadow: var(--shadow);
-}
-
-#profileMenu[hidden],
-#profileModal[hidden],
-[hidden] {
-  display: none !important;
-}
-
-.profile-heading {
-  padding: 8px 10px 12px;
-  color: var(--mute);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-#profileMenu button {
-  width: 100%;
-  min-height: 43px;
-  padding: 0 12px;
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  border: 0;
-  border-radius: 10px;
-  background: transparent;
-  color: var(--ink);
-  text-align: left;
-  font-size: 14px;
-  cursor: pointer;
-}
-
-#profileMenu button:hover {
-  background: var(--panel-2);
-}
-
-/* PROFILE MODAL */
-
-#profileModal {
-  position: fixed;
-  z-index: 120;
-  inset: 0;
-  padding: 20px;
-  display: grid;
-  place-items: center;
-  background: rgba(0, 0, 0, .58);
-  backdrop-filter: blur(5px);
-}
-
-.profile-card {
-  width: min(340px, 100%);
-  padding: 20px;
-  border: 1px solid var(--line);
-  border-radius: 22px;
-  background: var(--panel);
-  box-shadow: var(--shadow);
-  text-align: center;
-}
-
-.profile-modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 20px;
-  text-align: left;
-}
-
-#closeProfile {
-  width: 34px;
-  height: 34px;
-  border: 0;
-  border-radius: 10px;
-  background: var(--panel-2);
-  color: var(--ink);
-  font-size: 17px;
-  cursor: pointer;
-}
-
-#profilePhoto {
-  width: 76px;
-  height: 76px;
-  margin: 0 auto 10px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-.profile-card h3 {
-  margin: 8px 0 4px;
-  font-size: 19px;
-}
-
-.profile-card p {
-  margin: 0 0 18px;
-  color: var(--mute);
-  font-size: 13px;
-}
-
-.profile-detail {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px 0;
-  border-top: 1px solid var(--line);
-  font-size: 13px;
-  text-align: left;
-}
-
-.profile-detail span {
-  color: var(--mute);
-}
-
-.profile-detail strong {
-  max-width: 60%;
-  overflow-wrap: anywhere;
-  text-align: right;
-}
-
-/* BOARD */
-
-#viewport {
-  position: fixed;
-  z-index: 1;
-  top: 66px;
-  right: 0;
-  bottom: 145px;
-  left: 0;
-  overflow: hidden;
-  background-color: var(--bg);
-  background-image: radial-gradient(var(--line) 1px, transparent 1px);
-  background-size: 22px 22px;
-  touch-action: none;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-#world {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 3000px;
-  height: 3600px;
-  transform-origin: 0 0;
-  overflow: visible;
-}
-
-#wb {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-  pointer-events: none;
-}
-
-#answers {
-  position: absolute;
-  inset: 0;
-  overflow: visible;
-  pointer-events: none;
-}
-
-#answers > * {
-  pointer-events: auto;
-}
-
-/* BUBBLE CHARACTER */
-
-#bubble {
-  position: absolute;
-  z-index: 15;
-  width: 112px;
-  height: 112px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  border: 2px solid rgba(255, 255, 255, .65);
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 30% 22%, rgba(255,255,255,.95) 0 3%, transparent 17%),
-    radial-gradient(circle at 34% 25%, #9bd5ff 0%, #4ba4ff 25%, #2673ed 58%, #1745b8 100%);
-  box-shadow:
-    inset -9px -12px 22px rgba(5, 28, 104, .45),
-    inset 7px 8px 17px rgba(255, 255, 255, .48),
-    0 12px 30px var(--bubble-glow),
-    0 0 38px var(--bubble-glow);
-  cursor: grab;
-  touch-action: none;
-  user-select: none;
-  -webkit-user-select: none;
-  animation: bubbleFloat 3s ease-in-out infinite;
-}
-
-#bubble::before {
-  content: "";
-  position: absolute;
-  top: 12px;
-  left: 22px;
-  width: 37px;
-  height: 15px;
-  border-radius: 50%;
-  background: rgba(255,255,255,.58);
-  filter: blur(4px);
-  transform: rotate(-28deg);
-  pointer-events: none;
-}
-
-#bubble::after {
-  content: "";
-  position: absolute;
-  right: 17px;
-  bottom: 18px;
-  width: 17px;
-  height: 9px;
-  border-radius: 50%;
-  background: rgba(255,255,255,.18);
-  filter: blur(4px);
-  pointer-events: none;
-}
-
-#bubble.bubble-dragging {
-  cursor: grabbing;
-  animation: none;
-  transition: none;
-  filter: brightness(1.08);
-}
-
-.eyes {
-  position: relative;
-  z-index: 1;
-  width: 52px;
-  display: flex;
-  justify-content: space-between;
-  margin-top: 5px;
-}
-
-.eye {
-  width: 13px;
-  height: 17px;
-  border-radius: 50%;
-  background: #09204c;
-  box-shadow: inset 2px 2px 3px rgba(255,255,255,.35);
-  animation: eyeBlink 5s infinite;
-}
-
-#mouth {
-  position: relative;
-  z-index: 1;
-  width: 19px;
-  height: 9px;
-  margin-top: 9px;
-  border-bottom: 3px solid #09204c;
-  border-radius: 0 0 50% 50%;
-  transition: all .2s ease;
-}
-
-#bubble.thinking {
-  animation: bubbleThink .65s ease-in-out infinite alternate;
-}
-
-#bubble.thinking #mouth {
-  width: 10px;
-  height: 10px;
-  border: 3px solid #09204c;
-  border-radius: 50%;
-}
-
-#bubble.happy {
-  animation: bubbleHappy .45s ease-in-out infinite alternate;
-}
-
-#bubble.happy #mouth {
-  width: 25px;
-  height: 14px;
-  border-bottom-width: 4px;
-}
-
-#bubble.surprised #mouth {
-  width: 13px;
-  height: 17px;
-  border: 3px solid #09204c;
-  border-radius: 50%;
-}
-
-#bubble.sad #mouth {
-  width: 20px;
-  height: 8px;
-  border-top: 3px solid #09204c;
-  border-bottom: 0;
-  border-radius: 50% 50% 0 0;
-}
-
-#bubble.speaking {
-  animation: bubbleSpeak .25s ease-in-out infinite alternate;
-}
-
-#bubble.speaking #mouth {
-  width: 17px;
-  height: 14px;
-  border: 3px solid #09204c;
-  border-radius: 50%;
-  background: rgba(9, 32, 76, .18);
-}
-
-/* ANSWER CARDS */
-
-.answer-card,
-.answer,
-.result-card {
-  position: relative;
-  max-width: min(340px, calc(100vw - 40px));
-  margin: 12px;
-  padding: 15px;
-  border: 1px solid var(--line);
-  border-radius: 15px;
-  background: var(--panel);
-  color: var(--ink);
-  box-shadow: var(--shadow);
-  overflow-wrap: anywhere;
-  line-height: 1.55;
-  font-size: 14px;
-}
-
-.answer-card h1,
-.answer-card h2,
-.answer-card h3,
-.answer h1,
-.answer h2,
-.answer h3 {
-  margin-top: 0;
-  color: var(--ink);
-}
-
-.answer-card p,
-.answer p {
-  margin: 7px 0;
-}
-
-.answer-card pre,
-.answer pre {
-  max-width: 100%;
-  padding: 12px;
-  border-radius: 10px;
-  background: var(--panel-2);
-  overflow-x: auto;
-}
-
-.answer-card code,
-.answer code {
-  font-family: "SFMono-Regular", Consolas, monospace;
-}
-
-.answer-card img,
-.answer img {
-  max-width: 100%;
-  border-radius: 10px;
-}
-
-/* BOTTOM DOCK */
-
-#dock {
-  position: fixed;
-  z-index: 40;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  padding: 10px 12px max(12px, env(safe-area-inset-bottom));
-  border-top: 1px solid var(--line);
-  background: var(--panel);
-  box-shadow: 0 -8px 25px rgba(0, 0, 0, .08);
-}
-
-.voice-controls {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr 42px;
-  gap: 7px;
-  margin-bottom: 9px;
-}
-
-.k {
-  min-width: 0;
-  min-height: 37px;
-  padding: 0 8px;
-  border: 1px solid var(--line);
-  border-radius: 11px;
-  background: var(--key);
-  color: var(--ink);
-  font-size: 12px;
-  font-weight: 650;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.k.main {
-  border-color: transparent;
-  background: var(--blue);
-  color: #fff;
-}
-
-#bReplay {
-  padding: 0;
-  font-size: 18px;
-}
-
-.in {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  min-height: 48px;
-  padding: 5px;
-  border: 1px solid var(--line);
-  border-radius: 15px;
-  background: var(--panel-2);
-}
-
-.in input {
-  width: 100%;
-  min-width: 0;
-  height: 38px;
-  padding: 0 7px;
-  border: 0;
-  outline: none;
-  background: transparent;
-  color: var(--ink);
-  font-size: 14px;
-}
-
-.in input::placeholder {
-  color: var(--mute);
-  opacity: .85;
-}
-
-.k.sm {
-  width: 36px;
-  min-width: 36px;
-  height: 36px;
-  min-height: 36px;
-  padding: 0;
-  font-size: 18px;
-}
-
-.go {
-  width: 38px;
-  min-width: 38px;
-  height: 38px;
-  border: 0;
-  border-radius: 12px;
-  background: var(--blue);
-  color: #fff;
-  font-size: 19px;
-  cursor: pointer;
-  box-shadow: 0 4px 12px var(--bubble-glow);
-}
-
-button:disabled {
-  opacity: .45;
-  cursor: not-allowed;
-}
-
-/* HISTORY / EXTRA MENU */
-
-#menu {
-  position: fixed;
-  z-index: 90;
-  right: 12px;
-  bottom: 155px;
-  left: 12px;
-  max-height: 55vh;
-  padding: 12px;
-  border: 1px solid var(--line);
-  border-radius: 17px;
-  background: var(--panel);
-  color: var(--ink);
-  box-shadow: var(--shadow);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-
-#menu button {
-  min-height: 38px;
-  padding: 8px 12px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: var(--key);
-  color: var(--ink);
-  cursor: pointer;
-}
-
-#menu button:hover {
-  background: var(--panel-2);
-}
-
-#menu > * {
-  max-width: 100%;
-}
-
-#menu .history-item,
-#menu .session-item {
-  display: block;
-  width: 100%;
-  margin: 6px 0;
-  padding: 12px;
-  border: 1px solid var(--line);
-  border-radius: 11px;
-  background: var(--panel-2);
-  color: var(--ink);
-  text-align: left;
-  overflow-wrap: anywhere;
-}
-
-/* TOAST */
-
-#toast {
-  position: fixed;
-  z-index: 200;
-  right: 18px;
-  bottom: 160px;
-  left: 18px;
-  width: fit-content;
-  max-width: calc(100vw - 36px);
-  margin: auto;
-  padding: 11px 16px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--panel);
-  color: var(--ink);
-  box-shadow: var(--shadow);
-  font-size: 13px;
-  text-align: center;
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(8px);
-  transition: opacity .2s ease, transform .2s ease;
-}
-
-#toast.show {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/* ANIMATIONS */
-
-@keyframes bubbleFloat {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-5px); }
-}
-
-@keyframes bubbleThink {
-  from { transform: translateY(0) rotate(-4deg); }
-  to { transform: translateY(-5px) rotate(4deg); }
-}
-
-@keyframes bubbleHappy {
-  from { transform: translateY(0) scale(1); }
-  to { transform: translateY(-5px) scale(1.04); }
-}
-
-@keyframes bubbleSpeak {
-  from { transform: scale(1); }
-  to { transform: scale(1.045); }
-}
-
-@keyframes eyeBlink {
-  0%, 45%, 49%, 100% { transform: scaleY(1); }
-  47% { transform: scaleY(.12); }
-}
-
-/* MOBILE */
-
-@media (max-width: 380px) {
-  .topbar {
-    height: 60px;
-    padding: 0 10px;
-  }
-
-  .brand {
-    gap: 7px;
-    font-size: 16px;
-  }
-
-  .profile-trigger {
-    width: 35px;
-    height: 35px;
-  }
-
-  #bNew {
-    min-height: 36px;
-    padding: 0 9px;
-    font-size: 11px;
-  }
-
-  #viewport {
-    top: 60px;
-    bottom: 140px;
-  }
-
-  #bubble {
-    width: 96px;
-    height: 96px;
-  }
-
-  .voice-controls {
-    grid-template-columns: 1fr 1fr 1fr 36px;
-    gap: 5px;
-  }
-
-  .k {
-    padding: 0 4px;
-    font-size: 10px;
-  }
-
-  #bReplay {
-    font-size: 16px;
-  }
-
-  #dock {
-    padding-right: 8px;
-    padding-left: 8px;
-  }
-
-  .in input {
-    font-size: 12px;
+const $ = id => document.getElementById(id);
+
+const viewport = $('viewport');
+const world = $('world');
+const svg = $('wb');
+const bubble = $('bubble');
+const mouth = $('mouth');
+const form = $('form');
+const input = $('q');
+const sendBtn = $('go');
+const audio = $('au');
+const answers = $('answers');
+const menu = $('menu');
+const toast = $('toast');
+
+const STORAGE_KEY = 'bubble-ai-history-v1';
+const SESSIONS_KEY = 'bubble-ai-sessions-v1';
+const HISTORY_TTL = 7 * 24 * 60 * 60 * 1000;
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+const WORLD_WIDTH = 2400;
+const WORLD_HEIGHT = 3600;
+
+let historyItems = [];
+let sessions = [];
+let camera = { x: 0, y: 0, scale: 1 };
+let writeY = 180;
+let answerNumber = 0;
+
+let audioQueue = [];
+let queueIndex = 0;
+let speaking = false;
+let paused = false;
+let recognition = null;
+
+let toastTimer;
+let emotionTimer;
+let pointers = new Map();
+let lastPinchDistance = 0;
+let lastPan = null;
+
+let activeRequestCount = 0;
+let lastAnswerY = 180;
+
+/* =========================
+   BUBBLE HARAKATI
+========================= */
+
+function moveBubbleTo(x, y) {
+  const maxX = Math.max(8, viewport.clientWidth - bubble.offsetWidth - 8);
+  const maxY = Math.max(8, viewport.clientHeight - bubble.offsetHeight - 8);
+
+  bubble.style.left = `${Math.max(8, Math.min(x, maxX))}px`;
+  bubble.style.top = `${Math.max(8, Math.min(y, maxY))}px`;
+}
+
+let bubbleDragging = false;
+let bubbleMoved = false;
+let bubbleOffsetX = 0;
+let bubbleOffsetY = 0;
+
+bubble.addEventListener('pointerdown', event => {
+  event.stopPropagation();
+  event.preventDefault();
+
+  bubbleDragging = true;
+  bubbleMoved = false;
+
+  const rect = bubble.getBoundingClientRect();
+
+  bubbleOffsetX = event.clientX - rect.left;
+  bubbleOffsetY = event.clientY - rect.top;
+
+  bubble.setPointerCapture(event.pointerId);
+  bubble.classList.add('happy', 'bubble-dragging');
+});
+
+bubble.addEventListener('pointermove', event => {
+  event.stopPropagation();
+
+  if (!bubbleDragging) return;
+
+  bubbleMoved = true;
+
+  const rect = viewport.getBoundingClientRect();
+
+  moveBubbleTo(
+    event.clientX - rect.left - bubbleOffsetX,
+    event.clientY - rect.top - bubbleOffsetY
+  );
+});
+
+function stopBubbleDragging(event) {
+  if (event) event.stopPropagation();
+  if (!bubbleDragging) return;
+
+  bubbleDragging = false;
+  bubble.classList.remove('bubble-dragging');
+
+  if (activeRequestCount) {
+    setEmotion('thinking');
+  } else {
+    setEmotion('');
   }
 }
 
-@media (min-width: 700px) {
-  #dock {
-    right: 50%;
-    bottom: 15px;
-    left: 50%;
-    width: min(650px, calc(100vw - 40px));
-    padding: 12px;
-    border: 1px solid var(--line);
-    border-radius: 20px;
-    transform: translateX(-50%);
+bubble.addEventListener('pointerup', stopBubbleDragging);
+bubble.addEventListener('pointercancel', stopBubbleDragging);
+
+function bubbleCenter() {
+  moveBubbleTo(
+    (viewport.clientWidth - bubble.offsetWidth) / 2,
+    (viewport.clientHeight - bubble.offsetHeight) / 2
+  );
+}
+
+function bubbleAboveChat() {
+  const dock = $('dock');
+  const viewportRect = viewport.getBoundingClientRect();
+  const dockRect = dock.getBoundingClientRect();
+
+  const y = dockRect.top - viewportRect.top - bubble.offsetHeight - 12;
+
+  moveBubbleTo(
+    (viewport.clientWidth - bubble.offsetWidth) / 2,
+    y
+  );
+
+  setEmotion('happy');
+}
+
+function bubbleNearAnswer(y) {
+  const screenY = camera.y + y * camera.scale;
+  const x = viewport.clientWidth - bubble.offsetWidth - 18;
+
+  moveBubbleTo(x, screenY - bubble.offsetHeight - 15);
+}
+
+function bubbleWatchAnswer(y) {
+  bubbleNearAnswer(y);
+  setEmotion('thinking');
+}
+
+input.addEventListener('focus', bubbleAboveChat);
+
+input.addEventListener('blur', () => {
+  if (!activeRequestCount && !speaking) {
+    setEmotion('');
+  }
+});
+
+window.addEventListener('resize', () => {
+  if (document.activeElement === input) {
+    bubbleAboveChat();
+  } else {
+    bubbleCenter();
+  }
+});
+
+/* =========================
+   TOAST VA EMOTSIYA
+========================= */
+
+function showToast(message) {
+  toast.textContent = message;
+  toast.classList.add('show');
+
+  clearTimeout(toastTimer);
+
+  toastTimer = setTimeout(() => {
+    toast.classList.remove('show');
+  }, 2800);
+}
+
+function setEmotion(name = '') {
+  bubble.classList.remove(
+    'thinking',
+    'happy',
+    'surprised',
+    'sad'
+  );
+
+  if (name) bubble.classList.add(name);
+}
+
+function happy() {
+  setEmotion('happy');
+
+  clearTimeout(emotionTimer);
+
+  emotionTimer = setTimeout(() => {
+    if (!speaking && !activeRequestCount) {
+      setEmotion('');
+    }
+  }, 1800);
+}
+
+/* =========================
+   7 KUNLIK TARIX
+========================= */
+
+function isWithinHistoryLimit(time) {
+  const value = Number(time);
+  const now = Date.now();
+
+  return (
+    Number.isFinite(value) &&
+    value > 0 &&
+    value <= now + 60000 &&
+    now - value <= HISTORY_TTL
+  );
+}
+
+function pruneExpiredHistory() {
+  historyItems = historyItems.filter(item =>
+    item && isWithinHistoryLimit(item.time)
+  );
+
+  sessions = sessions
+    .filter(session => session && Array.isArray(session.items))
+    .map(session => {
+      const sessionTime = Number(
+        session.createdAt || session.id
+      );
+
+      session.items = session.items.filter(item =>
+        item && isWithinHistoryLimit(item.time)
+      );
+
+      return {
+        ...session,
+        createdAt: sessionTime
+      };
+    })
+    .filter(session =>
+      isWithinHistoryLimit(session.createdAt) &&
+      session.items.length > 0
+    );
+}
+
+function saveHistory() {
+  pruneExpiredHistory();
+
+  try {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(historyItems.slice(-30))
+    );
+  } catch {
+    showToast('Tarixni saqlash uchun joy yetarli emas.');
+  }
+}
+
+function loadHistory() {
+  try {
+    const saved = JSON.parse(
+      localStorage.getItem(STORAGE_KEY) || '[]'
+    );
+
+    historyItems = Array.isArray(saved) ? saved : [];
+  } catch {
+    historyItems = [];
+  }
+}
+
+function saveSessions() {
+  pruneExpiredHistory();
+
+  try {
+    localStorage.setItem(
+      SESSIONS_KEY,
+      JSON.stringify(sessions.slice(0, 20))
+    );
+  } catch {
+    showToast('Doska tarixini saqlab bo‘lmadi.');
+  }
+}
+
+function saveSession() {
+  pruneExpiredHistory();
+
+  if (!historyItems.length) return;
+
+  const now = Date.now();
+
+  const session = {
+    id: now,
+    createdAt: now,
+    time: new Date(now).toLocaleString('uz-UZ'),
+    items: historyItems.map(item => ({
+      prompt: item.prompt,
+      text: item.text,
+      audio: item.audio || null,
+      time: item.time
+    }))
+  };
+
+  sessions.unshift(session);
+  sessions = sessions.slice(0, 20);
+
+  saveSessions();
+}
+
+function loadSessions() {
+  try {
+    const saved = JSON.parse(
+      localStorage.getItem(SESSIONS_KEY) || '[]'
+    );
+
+    sessions = Array.isArray(saved) ? saved : [];
+  } catch {
+    sessions = [];
+  }
+}
+
+/* =========================
+   SVG YORDAMCHILARI
+========================= */
+
+function makeSVG(tag, attrs = {}) {
+  const node = document.createElementNS(SVG_NS, tag);
+
+  Object.entries(attrs).forEach(([key, value]) => {
+    node.setAttribute(key, String(value));
+  });
+
+  return node;
+}
+
+function addText(text, x, y, options = {}) {
+  const node = makeSVG('text', {
+    x,
+    y,
+    fill: options.color || '#f1f5f9',
+    'font-size': options.size || 22,
+    'font-family': options.font || 'Comic Sans MS, Segoe Print, cursive',
+    'font-weight': options.weight || 'normal'
+  });
+
+  node.textContent = text;
+  svg.appendChild(node);
+
+  return node;
+}
+
+function wrapText(text, maxChars = 31) {
+  const lines = [];
+
+  String(text || '').split('\n').forEach(paragraph => {
+    let line = '';
+
+    paragraph.split(/\s+/).forEach(word => {
+      if (!word) return;
+
+      const next = line ? `${line} ${word}` : word;
+
+      if (next.length > maxChars && line) {
+        lines.push(line);
+        line = word;
+      } else {
+        line = next;
+      }
+    });
+
+    lines.push(line);
+  });
+
+  return lines;
+}
+
+/* =========================
+   YOZISH ANIMATSIYASI
+========================= */
+
+function drawTyping(text, x, y, done) {
+  const lines = wrapText(text);
+  const lineHeight = 34;
+
+  const nodes = lines.map((line, index) => {
+    const node = makeSVG('text', {
+      x,
+      y: y + index * lineHeight,
+      fill: '#f1f5f9',
+      'font-size': 22,
+      'font-family': 'Comic Sans MS, Segoe Print, cursive'
+    });
+
+    svg.appendChild(node);
+
+    return { node, line };
+  });
+
+  const dot = makeSVG('circle', {
+    r: 4,
+    fill: '#93c5fd',
+    stroke: '#fff',
+    'stroke-width': 1
+  });
+
+  svg.appendChild(dot);
+
+  let row = 0;
+  let col = 0;
+
+  function step() {
+    while (
+      row < nodes.length &&
+      col >= nodes[row].line.length
+    ) {
+      row++;
+      col = 0;
+    }
+
+    if (row >= nodes.length) {
+      dot.remove();
+      if (done) done();
+      return;
+    }
+
+    const item = nodes[row];
+
+    col++;
+    item.node.textContent = item.line.slice(0, col);
+
+    let width = col * 12;
+
+    try {
+      width = item.node.getComputedTextLength();
+    } catch {}
+
+    dot.setAttribute('cx', x + width + 3);
+    dot.setAttribute('cy', y + row * lineHeight - 7);
+
+    setTimeout(
+      step,
+      item.line[col - 1] === ' ' ? 15 : 35
+    );
   }
 
-  #viewport {
-    bottom: 160px;
+  step();
+}
+
+/* =========================
+   SHAKLLAR
+========================= */
+
+function drawPath(pathData, done) {
+  const path = makeSVG('path', {
+    d: pathData,
+    fill: 'none',
+    stroke: '#f1f5f9',
+    'stroke-width': 4,
+    'stroke-linecap': 'round',
+    'stroke-linejoin': 'round'
+  });
+
+  svg.appendChild(path);
+
+  let total;
+
+  try {
+    total = path.getTotalLength();
+  } catch {
+    if (done) done();
+    return;
   }
 
-  #menu {
-    right: max(20px, calc((100vw - 650px) / 2));
-    left: auto;
-    width: 420px;
+  path.style.strokeDasharray = total;
+  path.style.strokeDashoffset = total;
+
+  const dot = makeSVG('circle', {
+    r: 4,
+    fill: '#93c5fd',
+    stroke: '#fff',
+    'stroke-width': 1
+  });
+
+  svg.appendChild(dot);
+
+  let distance = 0;
+
+  function step() {
+    distance = Math.min(total, distance + 4);
+
+    path.style.strokeDashoffset = total - distance;
+
+    const point = path.getPointAtLength(distance);
+
+    dot.setAttribute('cx', point.x);
+    dot.setAttribute('cy', point.y);
+
+    if (distance < total) {
+      requestAnimationFrame(step);
+    } else {
+      dot.remove();
+      if (done) done();
+    }
+  }
+
+  step();
+}
+
+function drawShape(shape, x, y, done) {
+  const paths = {
+    square: `M ${x} ${y} h 120 v 120 h -120 Z`,
+    rectangle: `M ${x} ${y} h 160 v 95 h -160 Z`,
+    triangle: `M ${x} ${y + 120} L ${x + 65} ${y} L ${x + 130} ${y + 120} Z`,
+    diamond: `M ${x + 65} ${y} L ${x + 130} ${y + 65} L ${x + 65} ${y + 130} L ${x} ${y + 65} Z`,
+    star: `M ${x + 65} ${y} L ${x + 82} ${y + 45} L ${x + 130} ${y + 48} L ${x + 94} ${y + 79} L ${x + 105} ${y + 126} L ${x + 65} ${y + 100} L ${x + 25} ${y + 126} L ${x + 36} ${y + 79} L ${x} ${y + 48} L ${x + 48} ${y + 45} Z`,
+    heart: `M ${x + 65} ${y + 120} C ${x + 45} ${y + 100}, ${x} ${y + 70}, ${x + 10} ${y + 35} C ${x + 20} ${y}, ${x + 55} ${y + 5}, ${x + 65} ${y + 30} C ${x + 80} ${y + 5}, ${x + 115} ${y}, ${x + 120} ${y + 35} C ${x + 130} ${y + 70}, ${x + 85} ${y + 100}, ${x + 65} ${y + 120} Z`
+  };
+
+  if (shape === 'circle') {
+    const circle = makeSVG('circle', {
+      cx: x + 65,
+      cy: y + 65,
+      r: 60,
+      fill: 'none',
+      stroke: '#f1f5f9',
+      'stroke-width': 4
+    });
+
+    svg.appendChild(circle);
+
+    let length;
+
+    try {
+      length = circle.getTotalLength();
+    } catch {
+      if (done) done();
+      return;
+    }
+
+    circle.style.strokeDasharray = length;
+    circle.style.strokeDashoffset = length;
+
+    let distance = 0;
+
+    const dot = makeSVG('circle', {
+      r: 4,
+      fill: '#93c5fd'
+    });
+
+    svg.appendChild(dot);
+
+    function step() {
+      distance = Math.min(length, distance + 4);
+
+      circle.style.strokeDashoffset = length - distance;
+
+      const point = circle.getPointAtLength(distance);
+
+      dot.setAttribute('cx', point.x);
+      dot.setAttribute('cy', point.y);
+
+      if (distance < length) {
+        requestAnimationFrame(step);
+      } else {
+        dot.remove();
+        if (done) done();
+      }
+    }
+
+    step();
+    return;
+  }
+
+  if (paths[shape]) {
+    drawPath(paths[shape], done);
+  } else if (done) {
+    done();
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    scroll-behavior: auto !important;
-    animation-duration: .01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: .01ms !important;
+function findShape(prompt) {
+  const p = String(prompt || '').toLowerCase();
+
+  if (/kvadrat|square/.test(p)) return ['square', 'Kvadrat'];
+  if (/to‘g‘ri to‘rtburchak|to'g'ri to'rtburchak|rectangle/.test(p)) return ['rectangle', 'To‘g‘ri to‘rtburchak'];
+  if (/uchburchak|triangle/.test(p)) return ['triangle', 'Uchburchak'];
+  if (/doira|aylana|circle/.test(p)) return ['circle', 'Doira'];
+  if (/romb|diamond/.test(p)) return ['diamond', 'Romb'];
+  if (/yulduz|star/.test(p)) return ['star', 'Yulduz'];
+  if (/yurak|heart/.test(p)) return ['heart', 'Yurak'];
+
+  return null;
+}
+
+/* =========================
+   DOSKAGA JAVOB YOZISH
+========================= */
+
+function writeOnBoard(text, prompt = '') {
+  const content = String(text || '').trim();
+
+  if (!content) return;
+
+  const x = 150;
+  const y = writeY;
+  const lines = wrapText(content);
+  const shapeInfo = findShape(prompt);
+
+  const shapeHeight = shapeInfo ? 180 : 0;
+  const cardHeight = Math.max(
+    150,
+    shapeHeight + lines.length * 34 + 90
+  );
+
+  const frame = makeSVG('rect', {
+    x: x - 24,
+    y: y - 48,
+    width: 510,
+    height: cardHeight,
+    rx: 18,
+    fill: '#171a26',
+    'fill-opacity': 0.96,
+    stroke: '#394257',
+    'stroke-width': 2
+  });
+
+  svg.appendChild(frame);
+
+  addText(`Javob ${++answerNumber}`, x, y - 12, {
+    color: '#93c5fd',
+    size: 18,
+    font: 'Segoe UI, sans-serif',
+    weight: 'bold'
+  });
+
+  function writeBody(startY) {
+    bubbleWatchAnswer(y);
+
+    drawTyping(content, x, startY, () => {
+      if (!activeRequestCount) {
+        happy();
+      }
+    });
+  }
+
+  if (shapeInfo) {
+    drawShape(shapeInfo[0], x, y + 5, () => {
+      addText(shapeInfo[1], x, y + 155, {
+        color: '#93c5fd',
+        size: 20
+      });
+
+      writeBody(y + 190);
+    });
+  } else {
+    writeBody(y + 35);
+  }
+
+  writeY += cardHeight + 35;
+
+  if (writeY > WORLD_HEIGHT - 300) {
+    writeY = 180;
+    camera.x -= 520 * camera.scale;
+    applyCamera();
   }
 }
 
-/* KATTA PROFIL MENYUSI */
-#profileMenu {
-  width: min(310px, calc(100vw - 24px));
-  padding: 14px;
-  border-radius: 18px;
+/* =========================
+   OVOZ TIZIMI
+========================= */
+
+function stopSpeech() {
+  audio.pause();
+  audio.removeAttribute('src');
+  audio.load();
+
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+  }
+
+  speaking = false;
+  paused = false;
+
+  bubble.classList.remove('speaking');
+
+  if (mouth) mouth.style.transform = '';
+
+  $('bPlay').textContent = '▶ Davom';
 }
 
-.profile-heading {
-  padding: 12px;
-  font-size: 14px;
-  font-weight: 750;
+function browserSpeak(text) {
+  if (!('speechSynthesis' in window)) {
+    showToast('Bu brauzer ovozli o‘qishni qo‘llamaydi.');
+    nextAudio();
+    return;
+  }
+
+  const utterance = new SpeechSynthesisUtterance(text);
+
+  utterance.lang = 'uz-UZ';
+  utterance.rate = 0.9;
+  utterance.pitch = 1;
+
+  utterance.onstart = () => {
+    speaking = true;
+    paused = false;
+
+    bubble.classList.add('speaking');
+    $('bPlay').textContent = '⏸ Pauza';
+  };
+
+  utterance.onend = () => {
+    speaking = false;
+    bubble.classList.remove('speaking');
+    nextAudio();
+  };
+
+  utterance.onerror = () => {
+    speaking = false;
+    bubble.classList.remove('speaking');
+    nextAudio();
+  };
+
+  const voices = speechSynthesis.getVoices();
+  const uzVoice = voices.find(v =>
+    v.lang.toLowerCase().startsWith('uz')
+  );
+
+  if (uzVoice) utterance.voice = uzVoice;
+
+  speechSynthesis.speak(utterance);
 }
 
-#profileMenu button {
-  min-height: 56px;
-  padding: 0 16px;
-  margin-bottom: 5px;
-  border-radius: 13px;
-  font-size: 16px;
-  font-weight: 650;
+function playCurrent() {
+  if (
+    queueIndex < 0 ||
+    queueIndex >= audioQueue.length
+  ) return;
+
+  const item = audioQueue[queueIndex];
+
+  if (!item) return;
+
+  if (item.audio) {
+    audio.src = item.audio;
+
+    audio.play().then(() => {
+      speaking = true;
+      paused = false;
+
+      bubble.classList.add('speaking');
+      $('bPlay').textContent = '⏸ Pauza';
+    }).catch(() => {
+      showToast('Asosiy audio ishlamadi. Boshqa ovoz sinab ko‘riladi.');
+      browserSpeak(item.text);
+    });
+  } else {
+    browserSpeak(item.text);
+  }
 }
 
-/* TARIX OYNASI */
-#menu {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 16px;
+function startQueue(items, startIndex = 0) {
+  stopSpeech();
+
+  audioQueue = items.filter(item => item && item.text);
+  queueIndex = startIndex;
+
+  if (!audioQueue.length) return;
+
+  playCurrent();
 }
 
-#menu .history-heading {
-  font-size: 17px;
-  font-weight: 800;
+function nextAudio() {
+  if (queueIndex + 1 < audioQueue.length) {
+    queueIndex++;
+    playCurrent();
+  } else {
+    speaking = false;
+    paused = false;
+
+    bubble.classList.remove('speaking');
+    $('bPlay').textContent = '▶ Davom';
+  }
 }
 
-#menu .history-clear {
-  order: -1;
-  width: 100%;
-  min-height: 50px;
-  border: 1px solid rgba(239, 68, 68, .4);
-  border-radius: 12px;
-  background: rgba(239, 68, 68, .12);
-  color: #ef7777;
-  font-size: 15px;
-  font-weight: 750;
+function previousAudio() {
+  if (queueIndex > 0) {
+    stopSpeech();
+    queueIndex--;
+    playCurrent();
+  } else {
+    showToast('Bu birinchi javob.');
+  }
 }
 
-#menu .history-item {
-  width: 100%;
-  min-height: 50px;
-  margin: 0;
-  font-size: 14px;
+function toggleSpeech() {
+  if (audio.src) {
+    if (audio.paused && audio.currentTime > 0) {
+      audio.play();
+      paused = false;
+      $('bPlay').textContent = '⏸ Pauza';
+    } else if (!audio.paused) {
+      audio.pause();
+      paused = true;
+      $('bPlay').textContent = '▶ Davom';
+    }
+
+    return;
+  }
+
+  if ('speechSynthesis' in window) {
+    if (
+      speechSynthesis.speaking &&
+      !speechSynthesis.paused
+    ) {
+      speechSynthesis.pause();
+      paused = true;
+      $('bPlay').textContent = '▶ Davom';
+    } else if (speechSynthesis.paused) {
+      speechSynthesis.resume();
+      paused = false;
+      $('bPlay').textContent = '⏸ Pauza';
+    } else if (audioQueue[queueIndex]) {
+      playCurrent();
+    }
+  }
 }
 
-#menu .history-empty {
-  color: var(--mute);
-  font-size: 14px;
+audio.addEventListener('ended', () => {
+  speaking = false;
+  bubble.classList.remove('speaking');
+  nextAudio();
+});
+
+audio.addEventListener('error', () => {
+  const item = audioQueue[queueIndex];
+
+  if (item && item.text) {
+    browserSpeak(item.text);
+  }
+});
+
+$('bPlay').addEventListener('click', toggleSpeech);
+$('bPrevious').addEventListener('click', previousAudio);
+
+$('bNext').addEventListener('click', () => {
+  stopSpeech();
+  nextAudio();
+});
+
+$('bReplay').addEventListener('click', () => {
+  if (!audioQueue.length) {
+    showToast('Hali eshitiladigan javob yo‘q.');
+    return;
+  }
+
+  stopSpeech();
+  playCurrent();
+});
+
+/* =========================
+   DOSKA KAMERASI
+========================= */
+
+function applyCamera() {
+  world.style.transform =
+    `translate(${camera.x}px, ${camera.y}px) scale(${camera.scale})`;
 }
 
-#menu .history-close {
-  min-height: 46px;
-  margin-top: 5px;
-  font-size: 14px;
+function zoomAt(x, y, factor) {
+  const oldScale = camera.scale;
+
+  const nextScale = Math.max(
+    0.4,
+    Math.min(2.5, oldScale * factor)
+  );
+
+  if (nextScale === oldScale) return;
+
+  const worldX = (x - camera.x) / oldScale;
+  const worldY = (y - camera.y) / oldScale;
+
+  camera.scale = nextScale;
+
+  camera.x = x - worldX * nextScale;
+  camera.y = y - worldY * nextScale;
+
+  applyCamera();
 }
+
+viewport.addEventListener('pointerdown', event => {
+  if (event.target.closest?.('#bubble, button, input, article')) return;
+
+  viewport.setPointerCapture(event.pointerId);
+
+  pointers.set(event.pointerId, {
+    x: event.clientX,
+    y: event.clientY
+  });
+
+  if (pointers.size === 1) {
+    lastPan = {
+      x: event.clientX,
+      y: event.clientY
+    };
+
+    viewport.classList.add('drag');
+  } else if (pointers.size === 2) {
+    const points = [...pointers.values()];
+
+    lastPinchDistance = Math.hypot(
+      points[0].x - points[1].x,
+      points[0].y - points[1].y
+    );
+
+    lastPan = null;
+  }
+});
+
+viewport.addEventListener('pointermove', event => {
+  if (!pointers.has(event.pointerId)) return;
+
+  pointers.set(event.pointerId, {
+    x: event.clientX,
+    y: event.clientY
+  });
+
+  if (pointers.size === 1 && lastPan) {
+    camera.x += event.clientX - lastPan.x;
+    camera.y += event.clientY - lastPan.y;
+
+    lastPan = {
+      x: event.clientX,
+      y: event.clientY
+    };
+
+    applyCamera();
+  } else if (pointers.size === 2) {
+    const points = [...pointers.values()];
+
+    const distance = Math.hypot(
+      points[0].x - points[1].x,
+      points[0].y - points[1].y
+    );
+
+    if (lastPinchDistance) {
+      const centerX =
+        (points[0].x + points[1].x) / 2;
+
+      const centerY =
+        (points[0].y + points[1].y) / 2;
+
+      const rect = viewport.getBoundingClientRect();
+
+      zoomAt(
+        centerX - rect.left,
+        centerY - rect.top,
+        distance / lastPinchDistance
+      );
+    }
+
+    lastPinchDistance = distance;
+  }
+});
+
+function endPointer(event) {
+  pointers.delete(event.pointerId);
+
+  if (pointers.size < 2) {
+    lastPinchDistance = 0;
+  }
+
+  if (pointers.size === 1) {
+    lastPan = [...pointers.values()][0];
+  } else {
+    lastPan = null;
+    viewport.classList.remove('drag');
+  }
+}
+
+viewport.addEventListener('pointerup', endPointer);
+viewport.addEventListener('pointercancel', endPointer);
+
+viewport.addEventListener('wheel', event => {
+  event.preventDefault();
+
+  const rect = viewport.getBoundingClientRect();
+
+  zoomAt(
+    event.clientX - rect.left,
+    event.clientY - rect.top,
+    event.deltaY > 0 ? 0.92 : 1.08
+  );
+}, { passive: false });
+
+/* =========================
+   YANGI DOSKA
+========================= */
+
+function resetBoard() {
+  saveSession();
+  stopSpeech();
+
+  svg.replaceChildren();
+  answers.replaceChildren();
+
+  historyItems = [];
+  saveHistory();
+
+  writeY = 180;
+  answerNumber = 0;
+
+  audioQueue = [];
+  queueIndex = 0;
+
+  menu.hidden = true;
+
+  camera = {
+    x: 0,
+    y: 0,
+    scale: 1
+  };
+
+  applyCamera();
+  bubbleCenter();
+  setEmotion('');
+
+  showToast('Yangi bo‘sh doska ochildi. Eski doska tarixda saqlandi.');
+}
+
+$('bNew').addEventListener('click', resetBoard);
+
+/* =========================
+   TARIX MENYUSI
+========================= */
+
+function renderHistoryMenu() {
+  pruneExpiredHistory();
+  saveHistory();
+  saveSessions();
+
+  menu.replaceChildren();
+
+  const heading = document.createElement('p');
+  heading.className = 'history-heading';
+  heading.textContent = 'Saqlangan doskalar';
+  menu.append(heading);
+
+  // Tarixni tozalash tugmasi
+  const clear = document.createElement('button');
+  clear.type = 'button';
+  clear.className = 'history-clear';
+  clear.textContent = '🗑 Tarixni tozalash';
+
+  clear.onclick = () => {
+    if (!confirm('Barcha saqlangan doskalar o‘chirilsinmi?')) {
+      return;
+    }
+
+    sessions = [];
+    historyItems = [];
+
+    localStorage.removeItem(SESSIONS_KEY);
+    localStorage.removeItem(STORAGE_KEY);
+
+    menu.hidden = true;
+
+    showToast('Tarix tozalandi.');
+  };
+
+  menu.append(clear);
+
+  if (!sessions.length) {
+    const empty = document.createElement('p');
+    empty.className = 'history-empty';
+    empty.textContent = 'Hozircha saqlangan doska yo‘q.';
+    menu.append(empty);
+  }
+
+  sessions.forEach(session => {
+    const button = document.createElement('button');
+
+    button.type = 'button';
+    button.className = 'history-item';
+    button.textContent =
+      `${session.time || 'Saqlangan doska'} — ${session.items.length} ta javob`;
+
+    button.onclick = () => {
+      stopSpeech();
+
+      svg.replaceChildren();
+      answers.replaceChildren();
+
+      historyItems = session.items || [];
+      saveHistory();
+
+      writeY = 180;
+      answerNumber = 0;
+
+      historyItems.forEach(item => {
+        writeOnBoard(item.text, item.prompt);
+      });
+
+      audioQueue = historyItems.map(item => ({
+        text: item.text,
+        audio: item.audio
+      }));
+
+      queueIndex = 0;
+      menu.hidden = true;
+
+      bubbleCenter();
+
+      showToast('Oldingi doska qayta ochildi.');
+    };
+
+    menu.append(button);
+  });
+
+  const close = document.createElement('button');
+
+  close.type = 'button';
+  close.className = 'history-close';
+  close.textContent = 'Yopish';
+
+  close.onclick = () => {
+    menu.hidden = true;
+  };
+
+  menu.append(close);
+}
+
+$('bHistory').addEventListener('click', () => {
+  $('profileMenu').hidden = true;
+  renderHistoryMenu();
+  menu.hidden = false;
+});
+
+/* =========================
+   AI SAVOL-JAVOB
+========================= */
+
+async function ask(prompt, image = null) {
+  if (!prompt && !image) {
+    showToast('Savolingizni yozing yoki rasm tanlang.');
+    return;
+  }
+
+  activeRequestCount++;
+
+  sendBtn.disabled = true;
+  sendBtn.textContent = '…';
+
+  bubbleAboveChat();
+  setEmotion('thinking');
+
+  try {
+    const response = await fetch('/api/lesson', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        prompt,
+        image,
+        quick: false
+      })
+    });
+
+    let result;
+
+    try {
+      result = await response.json();
+    } catch {
+      throw new Error('Serverdan noto‘g‘ri javob keldi.');
+    }
+
+    if (!response.ok) {
+      throw new Error(result.error || 'Server xatosi');
+    }
+
+    const item = {
+      prompt,
+      text: result.text || 'Javob bo‘sh qaytdi.',
+      audio: result.audio || null,
+      time: Date.now()
+    };
+
+    historyItems.push(item);
+    historyItems = historyItems.slice(-30);
+
+    saveHistory();
+
+    const answerStartY = writeY;
+
+    bubbleNearAnswer(answerStartY);
+
+    writeOnBoard(item.text, item.prompt);
+
+    audioQueue.push({
+      text: item.text,
+      audio: item.audio
+    });
+
+    if (!speaking && !paused) {
+      if (audioQueue.length === 1) {
+        queueIndex = 0;
+        playCurrent();
+      }
+    }
+
+    setEmotion('');
+    showToast('Bubble doskaga javob yozmoqda.');
+  } catch (error) {
+    setEmotion('sad');
+
+    showToast(
+      error.message || 'Xatolik yuz berdi.'
+    );
+  } finally {
+    activeRequestCount = Math.max(
+      0,
+      activeRequestCount - 1
+    );
+
+    sendBtn.disabled = false;
+    sendBtn.textContent = '➤';
+
+    input.value = '';
+
+    if (!activeRequestCount && !speaking) {
+      setEmotion('');
+    }
+  }
+}
+
+form.addEventListener('submit', event => {
+  event.preventDefault();
+
+  const prompt = input.value.trim();
+
+  ask(prompt);
+});
+
+/* =========================
+   RASM YUKLASH
+========================= */
+
+$('bPlus').addEventListener('click', () => {
+  $('imageInput').click();
+});
+
+$('imageInput').addEventListener('change', event => {
+  const file = event.target.files?.[0];
+
+  if (!file) return;
+
+  if (!file.type.startsWith('image/')) {
+    showToast('Rasm faylini tanlang.');
+    event.target.value = '';
+    return;
+  }
+
+  if (file.size > 7 * 1024 * 1024) {
+    showToast('Rasm 7 MB dan kichik bo‘lsin.');
+    event.target.value = '';
+    return;
+  }
+
+  const reader = new FileReader();
+
+  reader.onload = async () => {
+    try {
+      await ask(input.value.trim(), {
+        mimeType: file.type,
+        data: reader.result
+      });
+    } finally {
+      event.target.value = '';
+    }
+  };
+
+  reader.onerror = () => {
+    showToast('Rasmni o‘qib bo‘lmadi.');
+    event.target.value = '';
+  };
+
+  reader.readAsDataURL(file);
+});
+
+/* =========================
+   MIKROFON
+========================= */
+
+$('bMic').addEventListener('click', () => {
+  const SpeechRecognition =
+    window.SpeechRecognition ||
+    window.webkitSpeechRecognition;
+
+  if (!SpeechRecognition) {
+    showToast('Ovoz kiritish uchun Chrome brauzeridan foydalaning.');
+    return;
+  }
+
+  if (recognition) {
+    recognition.stop();
+    recognition = null;
+    return;
+  }
+
+  recognition = new SpeechRecognition();
+
+  recognition.lang = 'uz-UZ';
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+
+  recognition.onresult = event => {
+    input.value = event.results[0][0].transcript;
+
+    bubbleAboveChat();
+    setEmotion('surprised');
+
+    setTimeout(() => setEmotion(''), 1200);
+  };
+
+  recognition.onerror = () => {
+    showToast('Mikrofon ishlamadi. Ruxsatni tekshiring.');
+  };
+
+  recognition.onend = () => {
+    recognition = null;
+  };
+
+  try {
+    recognition.start();
+    showToast('Gapiring, savolingizni tinglayapman.');
+  } catch {
+    recognition = null;
+    showToast('Mikrofonni qayta ishga tushiring.');
+  }
+});
+
+/* =========================
+   BOSHLANG‘ICH HOLAT
+========================= */
+
+loadHistory();
+loadSessions();
+
+pruneExpiredHistory();
+saveHistory();
+saveSessions();
+
+svg.replaceChildren();
+answers.replaceChildren();
+
+writeY = 180;
+answerNumber = 0;
+
+camera = {
+  x: 0,
+  y: 0,
+  scale: 1
+};
+
+applyCamera();
+setEmotion('');
+
+requestAnimationFrame(() => {
+  bubbleCenter();
+});
