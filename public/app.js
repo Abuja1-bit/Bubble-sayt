@@ -16,6 +16,7 @@ const toast = $('toast');
 
 const STORAGE_KEY = 'bubble-ai-history-v1';
 const SESSIONS_KEY = 'bubble-ai-sessions-v1';
+const HISTORY_TTL = 7 * 24 * 60 * 60 * 1000;
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
 const WORLD_WIDTH = 2400;
@@ -60,6 +61,9 @@ let bubbleOffsetX = 0;
 let bubbleOffsetY = 0;
 
 bubble.addEventListener('pointerdown', event => {
+  event.stopPropagation();
+  event.preventDefault();
+
   bubbleDragging = true;
   bubbleMoved = false;
 
@@ -70,10 +74,11 @@ bubble.addEventListener('pointerdown', event => {
 
   bubble.setPointerCapture(event.pointerId);
   bubble.classList.add('happy', 'bubble-dragging');
-  event.preventDefault();
 });
 
 bubble.addEventListener('pointermove', event => {
+  event.stopPropagation();
+
   if (!bubbleDragging) return;
 
   bubbleMoved = true;
@@ -86,17 +91,23 @@ bubble.addEventListener('pointermove', event => {
   );
 });
 
-function stopBubbleDragging() {
+function stopBubbleDragging(event) {
+  if (event) event.stopPropagation();
   if (!bubbleDragging) return;
 
   bubbleDragging = false;
   bubble.classList.remove('bubble-dragging');
 
-  setEmotion('');
+  if (activeRequestCount) {
+    setEmotion('thinking');
+  } else {
+    setEmotion('');
+  }
 }
 
 bubble.addEventListener('pointerup', stopBubbleDragging);
 bubble.addEventListener('pointercancel', stopBubbleDragging);
+
 function bubbleCenter() {
   moveBubbleTo(
     (viewport.clientWidth - bubble.offsetWidth) / 2,
@@ -134,7 +145,7 @@ function bubbleWatchAnswer(y) {
 input.addEventListener('focus', bubbleAboveChat);
 
 input.addEventListener('blur', () => {
-  if (!activeRequestCount) {
+  if (!activeRequestCount && !speaking) {
     setEmotion('');
   }
 });
@@ -153,11 +164,12 @@ window.addEventListener('resize', () => {
 
 function showToast(message) {
   toast.textContent = message;
-  toast.classList.add('on');
+  toast.classList.add('show');
 
   clearTimeout(toastTimer);
+
   toastTimer = setTimeout(() => {
-    toast.classList.remove('on');
+    toast.classList.remove('show');
   }, 2800);
 }
 
@@ -176,6 +188,7 @@ function happy() {
   setEmotion('happy');
 
   clearTimeout(emotionTimer);
+
   emotionTimer = setTimeout(() => {
     if (!speaking && !activeRequestCount) {
       setEmotion('');
@@ -184,10 +197,51 @@ function happy() {
 }
 
 /* =========================
-   TARIX
+   7 KUNLIK TARIX
 ========================= */
 
+function isWithinHistoryLimit(time) {
+  const value = Number(time);
+  const now = Date.now();
+
+  return (
+    Number.isFinite(value) &&
+    value > 0 &&
+    value <= now + 60000 &&
+    now - value <= HISTORY_TTL
+  );
+}
+
+function pruneExpiredHistory() {
+  historyItems = historyItems.filter(item =>
+    item && isWithinHistoryLimit(item.time)
+  );
+
+  sessions = sessions
+    .filter(session => session && Array.isArray(session.items))
+    .map(session => {
+      const sessionTime = Number(
+        session.createdAt || session.id
+      );
+
+      session.items = session.items.filter(item =>
+        item && isWithinHistoryLimit(item.time)
+      );
+
+      return {
+        ...session,
+        createdAt: sessionTime
+      };
+    })
+    .filter(session =>
+      isWithinHistoryLimit(session.createdAt) &&
+      session.items.length > 0
+    );
+}
+
 function saveHistory() {
+  pruneExpiredHistory();
+
   try {
     localStorage.setItem(
       STORAGE_KEY,
@@ -210,12 +264,30 @@ function loadHistory() {
   }
 }
 
+function saveSessions() {
+  pruneExpiredHistory();
+
+  try {
+    localStorage.setItem(
+      SESSIONS_KEY,
+      JSON.stringify(sessions.slice(0, 20))
+    );
+  } catch {
+    showToast('Doska tarixini saqlab bo‘lmadi.');
+  }
+}
+
 function saveSession() {
+  pruneExpiredHistory();
+
   if (!historyItems.length) return;
 
+  const now = Date.now();
+
   const session = {
-    id: Date.now(),
-    time: new Date().toLocaleString('uz-UZ'),
+    id: now,
+    createdAt: now,
+    time: new Date(now).toLocaleString('uz-UZ'),
     items: historyItems.map(item => ({
       prompt: item.prompt,
       text: item.text,
@@ -227,14 +299,7 @@ function saveSession() {
   sessions.unshift(session);
   sessions = sessions.slice(0, 20);
 
-  try {
-    localStorage.setItem(
-      SESSIONS_KEY,
-      JSON.stringify(sessions)
-    );
-  } catch {
-    showToast('Doska tarixini saqlab bo‘lmadi.');
-  }
+  saveSessions();
 }
 
 function loadSessions() {
@@ -458,7 +523,14 @@ function drawShape(shape, x, y, done) {
 
     svg.appendChild(circle);
 
-    const length = circle.getTotalLength();
+    let length;
+
+    try {
+      length = circle.getTotalLength();
+    } catch {
+      if (done) done();
+      return;
+    }
 
     circle.style.strokeDasharray = length;
     circle.style.strokeDashoffset = length;
@@ -812,7 +884,7 @@ function zoomAt(x, y, factor) {
 }
 
 viewport.addEventListener('pointerdown', event => {
-  if (event.target.closest('button, input, article')) return;
+  if (event.target.closest?.('#bubble, button, input, article')) return;
 
   viewport.setPointerCapture(event.pointerId);
 
@@ -928,6 +1000,8 @@ function resetBoard() {
   answers.replaceChildren();
 
   historyItems = [];
+  saveHistory();
+
   writeY = 180;
   answerNumber = 0;
 
@@ -956,11 +1030,14 @@ $('bNew').addEventListener('click', resetBoard);
 ========================= */
 
 function renderHistoryMenu() {
+  pruneExpiredHistory();
+  saveHistory();
+  saveSessions();
+
   menu.replaceChildren();
 
   const heading = document.createElement('p');
   heading.textContent = 'Saqlangan doskalar';
-
   menu.append(heading);
 
   if (!sessions.length) {
@@ -973,9 +1050,8 @@ function renderHistoryMenu() {
     const button = document.createElement('button');
 
     button.type = 'button';
-
     button.textContent =
-      `${session.time} — ${session.items.length} ta javob`;
+      `${session.time || 'Saqlangan doska'} — ${session.items.length} ta javob`;
 
     button.onclick = () => {
       stopSpeech();
@@ -984,6 +1060,7 @@ function renderHistoryMenu() {
       answers.replaceChildren();
 
       historyItems = session.items || [];
+      saveHistory();
 
       writeY = 180;
       answerNumber = 0;
@@ -1043,9 +1120,10 @@ function renderHistoryMenu() {
   menu.append(close);
 }
 
-$('bMenu').addEventListener('click', () => {
+$('bHistory').addEventListener('click', () => {
+  $('profileMenu').hidden = true;
   renderHistoryMenu();
-  menu.hidden = !menu.hidden;
+  menu.hidden = false;
 });
 
 /* =========================
@@ -1258,6 +1336,10 @@ $('bMic').addEventListener('click', () => {
 
 loadHistory();
 loadSessions();
+
+pruneExpiredHistory();
+saveHistory();
+saveSessions();
 
 svg.replaceChildren();
 answers.replaceChildren();
