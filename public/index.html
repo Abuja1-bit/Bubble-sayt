@@ -11,7 +11,6 @@
 </head>
 <body>
 
-  <!-- TOP BAR -->
   <header class="topbar">
     <div class="brand">
       <button id="bProfile" class="profile-trigger" type="button" aria-label="Profil menyusi">
@@ -22,7 +21,6 @@
     </div>
 
     <div class="top-actions">
-      <button id="bMenu" type="button">📚 Tarix</button>
       <button id="bNew" type="button">＋ Yangi doska</button>
     </div>
   </header>
@@ -32,20 +30,19 @@
     <div class="profile-heading">Profil menyusi</div>
     <button id="bTheme" type="button">🌙 Tungi rejim</button>
     <button id="bProfileInfo" type="button">👤 Profil ma’lumotlari</button>
+    <button id="bHistory" type="button">📚 Tarix</button>
     <button id="bHelp" type="button">❓ Yordam</button>
   </div>
 
   <!-- PROFIL OYNASI -->
   <div id="profileModal" hidden>
     <div class="profile-card">
-
       <div class="profile-modal-header">
         <strong>👤 Profil ma’lumotlari</strong>
         <button id="closeProfile" type="button" aria-label="Yopish">✕</button>
       </div>
 
       <img id="profilePhoto" alt="Profil rasmi" hidden>
-
       <h3 id="profileName">Foydalanuvchi</h3>
       <p id="profileUsername">Username mavjud emas</p>
 
@@ -58,7 +55,6 @@
         <span>Til</span>
         <strong id="profileLanguage">—</strong>
       </div>
-
     </div>
   </div>
 
@@ -80,12 +76,11 @@
 
   <div id="toast" role="status"></div>
 
-  <!-- TARIX -->
+  <!-- TARIX OYNASI -->
   <aside id="menu" hidden></aside>
 
   <!-- PASTKI PANEL -->
   <footer id="dock">
-
     <div class="row voice-controls">
       <button class="k" id="bPrevious" type="button">⏮ Oldingi</button>
       <button class="k main" id="bPlay" type="button">▶ Davom</button>
@@ -108,18 +103,15 @@
     </form>
 
     <input id="imageInput" type="file" accept="image/*" hidden>
-
   </footer>
 
   <audio id="au" preload="none"></audio>
 
-  <!-- ASOSIY APP -->
   <script src="app.js"></script>
 
   <!-- TELEGRAM VA PROFIL -->
   <script>
   (() => {
-
     const webApp = window.Telegram && window.Telegram.WebApp;
     const user = webApp && webApp.initDataUnsafe && webApp.initDataUnsafe.user;
 
@@ -131,7 +123,6 @@
       webApp.expand();
     }
 
-    // TELEGRAM AVATARI
     if (user && user.photo_url) {
       avatar.src = user.photo_url;
       avatar.hidden = false;
@@ -143,26 +134,26 @@
       }, { once: true });
     }
 
-    // PROFIL MENYUSI
     const profileButton = document.getElementById('bProfile');
     const profileMenu = document.getElementById('profileMenu');
     const themeButton = document.getElementById('bTheme');
     const themeColor = document.getElementById('themeColor');
+    const profileModal = document.getElementById('profileModal');
 
     function closeProfileMenu() {
       profileMenu.hidden = true;
     }
 
-    profileButton.addEventListener('click', (event) => {
+    profileButton.addEventListener('click', event => {
       event.stopPropagation();
       profileMenu.hidden = !profileMenu.hidden;
     });
 
-    profileMenu.addEventListener('click', (event) => {
+    profileMenu.addEventListener('click', event => {
       event.stopPropagation();
     });
 
-    document.addEventListener('click', (event) => {
+    document.addEventListener('click', event => {
       if (
         !profileMenu.hidden &&
         !profileMenu.contains(event.target) &&
@@ -206,8 +197,6 @@
     });
 
     // PROFIL MA'LUMOTLARI
-    const profileModal = document.getElementById('profileModal');
-
     document.getElementById('bProfileInfo').addEventListener('click', () => {
       closeProfileMenu();
 
@@ -244,12 +233,11 @@
       profileModal.hidden = false;
     });
 
-    // PROFIL OYNASINI YOPISH
     document.getElementById('closeProfile').addEventListener('click', () => {
       profileModal.hidden = true;
     });
 
-    profileModal.addEventListener('click', (event) => {
+    profileModal.addEventListener('click', event => {
       if (event.target === profileModal) {
         profileModal.hidden = true;
       }
