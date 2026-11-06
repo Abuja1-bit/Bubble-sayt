@@ -1364,3 +1364,10 @@ setEmotion('');
 requestAnimationFrame(() => {
   bubbleCenter();
 });
+
+     /* Yashirilgan oynalar ko‘rinmasin */
+#menu[hidden],
+#profileMenu[hidden],
+#profileModal[hidden] {
+  display: none !important;
+                                                                                                                                                                                                                                                                     }
