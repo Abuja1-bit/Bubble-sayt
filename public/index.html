@@ -11,6 +11,7 @@
 </head>
 <body>
 
+  <!-- TOP BAR -->
   <header class="topbar">
     <div class="brand">
       <button id="bProfile" class="profile-trigger" type="button" aria-label="Profil menyusi">
@@ -26,14 +27,42 @@
     </div>
   </header>
 
+  <!-- PROFIL MENYUSI -->
   <div id="profileMenu" hidden>
     <div class="profile-heading">Profil menyusi</div>
     <button id="bTheme" type="button">🌙 Tungi rejim</button>
     <button id="bProfileInfo" type="button">👤 Profil ma’lumotlari</button>
-    <button id="bSettings" type="button">⚙️ Sozlamalar</button>
     <button id="bHelp" type="button">❓ Yordam</button>
   </div>
 
+  <!-- PROFIL OYNASI -->
+  <div id="profileModal" hidden>
+    <div class="profile-card">
+
+      <div class="profile-modal-header">
+        <strong>👤 Profil ma’lumotlari</strong>
+        <button id="closeProfile" type="button" aria-label="Yopish">✕</button>
+      </div>
+
+      <img id="profilePhoto" alt="Profil rasmi" hidden>
+
+      <h3 id="profileName">Foydalanuvchi</h3>
+      <p id="profileUsername">Username mavjud emas</p>
+
+      <div class="profile-detail">
+        <span>Telegram ID</span>
+        <strong id="profileId">—</strong>
+      </div>
+
+      <div class="profile-detail">
+        <span>Til</span>
+        <strong id="profileLanguage">—</strong>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ASOSIY DOSKA -->
   <main id="viewport">
     <div id="world">
       <svg id="wb" xmlns="http://www.w3.org/2000/svg"></svg>
@@ -51,9 +80,12 @@
 
   <div id="toast" role="status"></div>
 
+  <!-- TARIX -->
   <aside id="menu" hidden></aside>
 
+  <!-- PASTKI PANEL -->
   <footer id="dock">
+
     <div class="row voice-controls">
       <button class="k" id="bPrevious" type="button">⏮ Oldingi</button>
       <button class="k main" id="bPlay" type="button">▶ Davom</button>
@@ -63,25 +95,31 @@
 
     <form id="form" class="in">
       <button class="k sm" id="bPlus" type="button" aria-label="Rasm qo‘shish">＋</button>
+
       <input
         id="q"
         type="text"
         placeholder="Bubble’dan nimani so‘ramoqchisiz?"
         autocomplete="off"
       >
+
       <button class="k sm" id="bMic" type="button" aria-label="Mikrofon">🎙</button>
       <button class="go" id="go" type="submit" aria-label="Yuborish">➤</button>
     </form>
 
     <input id="imageInput" type="file" accept="image/*" hidden>
+
   </footer>
 
   <audio id="au" preload="none"></audio>
 
+  <!-- ASOSIY APP -->
   <script src="app.js"></script>
 
+  <!-- TELEGRAM VA PROFIL -->
   <script>
   (() => {
+
     const webApp = window.Telegram && window.Telegram.WebApp;
     const user = webApp && webApp.initDataUnsafe && webApp.initDataUnsafe.user;
 
@@ -93,6 +131,7 @@
       webApp.expand();
     }
 
+    // TELEGRAM AVATARI
     if (user && user.photo_url) {
       avatar.src = user.photo_url;
       avatar.hidden = false;
@@ -166,20 +205,60 @@
       closeProfileMenu();
     });
 
-    // HOZIRCHA TAYYORLANAYOTGAN BO‘LIMLAR
+    // PROFIL MA'LUMOTLARI
+    const profileModal = document.getElementById('profileModal');
+
     document.getElementById('bProfileInfo').addEventListener('click', () => {
       closeProfileMenu();
-      alert('Profil ma’lumotlari bo‘limi keyingi bosqichda ulanadi.');
+
+      if (!user) {
+        alert('Telegram orqali ochilmagan. Profil ma’lumotlari topilmadi.');
+        return;
+      }
+
+      const fullName = [user.first_name, user.last_name]
+        .filter(Boolean)
+        .join(' ');
+
+      document.getElementById('profileName').textContent =
+        fullName || 'Foydalanuvchi';
+
+      document.getElementById('profileUsername').textContent =
+        user.username ? '@' + user.username : 'Username mavjud emas';
+
+      document.getElementById('profileId').textContent =
+        user.id ? String(user.id) : '—';
+
+      document.getElementById('profileLanguage').textContent =
+        user.language_code || '—';
+
+      const photo = document.getElementById('profilePhoto');
+
+      if (user.photo_url) {
+        photo.src = user.photo_url;
+        photo.hidden = false;
+      } else {
+        photo.hidden = true;
+      }
+
+      profileModal.hidden = false;
     });
 
-    document.getElementById('bSettings').addEventListener('click', () => {
-      closeProfileMenu();
-      alert('Sozlamalar bo‘limi keyingi bosqichda ulanadi.');
+    // PROFIL OYNASINI YOPISH
+    document.getElementById('closeProfile').addEventListener('click', () => {
+      profileModal.hidden = true;
     });
 
+    profileModal.addEventListener('click', (event) => {
+      if (event.target === profileModal) {
+        profileModal.hidden = true;
+      }
+    });
+
+    // YORDAM
     document.getElementById('bHelp').addEventListener('click', () => {
       closeProfileMenu();
-      alert('Yordam bo‘limiga Telegram username keyin qo‘shiladi.');
+      alert('Yordam Telegram manzili keyin qo‘shiladi.');
     });
 
   })();
