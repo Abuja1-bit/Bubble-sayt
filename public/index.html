@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#0d0f17">
+  <meta name="theme-color" content="#0d0f17" id="themeColor">
   <title>Bubble AI — Aqlli o‘qituvchi</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -14,14 +14,21 @@
   <header class="topbar">
     <div class="brand">
       <img id="telegramAvatar" class="telegram-avatar" alt="" hidden>
-<span class="brand-dot" id="brandDot">●</span>
+      <span class="brand-dot" id="brandDot">●</span>
       <strong>Bubble AI</strong>
     </div>
+
     <div class="top-actions">
+      <button id="bProfile" type="button" aria-label="Profil">👤</button>
       <button id="bMenu" type="button">📚 Tarix</button>
       <button id="bNew" type="button">＋ Yangi doska</button>
     </div>
   </header>
+
+  <div id="profileMenu" hidden>
+    <div class="profile-heading">Profil sozlamalari</div>
+    <button id="bTheme" type="button">🌙 Tungi rejim</button>
+  </div>
 
   <main id="viewport">
     <div id="world">
@@ -29,7 +36,6 @@
       <div id="answers"></div>
     </div>
 
-    <!-- Bubble doskadan mustaqil harakatlanadi -->
     <div id="bubble" aria-label="Bubble AI">
       <div class="eyes">
         <span class="eye"></span>
@@ -69,29 +75,83 @@
   <audio id="au" preload="none"></audio>
 
   <script src="app.js"></script>
+
   <script>
-(() => {
-  const webApp = window.Telegram && window.Telegram.WebApp;
-  const user = webApp && webApp.initDataUnsafe && webApp.initDataUnsafe.user;
-  const avatar = document.getElementById('telegramAvatar');
-  const dot = document.getElementById('brandDot');
+  (() => {
+    const webApp = window.Telegram && window.Telegram.WebApp;
+    const user = webApp && webApp.initDataUnsafe && webApp.initDataUnsafe.user;
 
-  if (webApp) {
-    webApp.ready();
-    webApp.expand();
-  }
+    const avatar = document.getElementById('telegramAvatar');
+    const dot = document.getElementById('brandDot');
 
-  if (user && user.photo_url) {
-    avatar.src = user.photo_url;
-    avatar.hidden = false;
-    dot.hidden = true;
+    if (webApp) {
+      webApp.ready();
+      webApp.expand();
+    }
 
-    avatar.addEventListener('error', () => {
-      avatar.hidden = true;
-      dot.hidden = false;
-    }, { once: true });
-  }
-})();
+    if (user && user.photo_url) {
+      avatar.src = user.photo_url;
+      avatar.hidden = false;
+      dot.hidden = true;
+
+      avatar.addEventListener('error', () => {
+        avatar.hidden = true;
+        dot.hidden = false;
+      }, { once: true });
+    }
+
+    // PROFIL MENYUSI
+    const profileButton = document.getElementById('bProfile');
+    const profileMenu = document.getElementById('profileMenu');
+    const themeButton = document.getElementById('bTheme');
+    const themeColor = document.getElementById('themeColor');
+
+    profileButton.addEventListener('click', () => {
+      profileMenu.hidden = !profileMenu.hidden;
+    });
+
+    // KUN / TUN REJIMI
+    function applyTheme(theme) {
+      document.body.dataset.theme = theme;
+
+      const isLight = theme === 'light';
+
+      themeButton.textContent = isLight
+        ? '🌙 Tungi rejim'
+        : '☀️ Kunduzgi rejim';
+
+      themeColor.content = isLight ? '#f4f6fb' : '#0d0f17';
+
+      try {
+        localStorage.setItem('bubble-theme', theme);
+      } catch (e) {}
+    }
+
+    let savedTheme = 'dark';
+
+    try {
+      savedTheme = localStorage.getItem('bubble-theme') || 'dark';
+    } catch (e) {}
+
+    applyTheme(savedTheme);
+
+    themeButton.addEventListener('click', () => {
+      const nextTheme =
+        document.body.dataset.theme === 'dark' ? 'light' : 'dark';
+
+      applyTheme(nextTheme);
+    });
+
+    document.addEventListener('click', (event) => {
+      if (
+        !profileMenu.contains(event.target) &&
+        !profileButton.contains(event.target)
+      ) {
+        profileMenu.hidden = true;
+      }
+    });
+  })();
   </script>
+
 </body>
 </html>
