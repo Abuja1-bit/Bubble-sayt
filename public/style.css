@@ -758,3 +758,67 @@ input:focus-visible {
   border-bottom: 2px solid #153d69;
   border-radius: 0 0 50% 50%;
 }
+/* AUDIO CONTROL DESIGN FIX */
+
+.voice-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  padding: 8px 5px;
+}
+
+.voice-controls button {
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  padding: 0;
+  flex: 0 0 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel-2);
+  color: var(--ink);
+  font-size: 0;
+}
+
+.voice-controls button::before {
+  font-size: 19px;
+  line-height: 1;
+}
+
+#bPrevious::before {
+  content: "⏮";
+}
+
+#bPlay {
+  width: 54px;
+  min-width: 54px;
+  height: 54px;
+  flex-basis: 54px;
+  border: none;
+  border-radius: 17px;
+  background: linear-gradient(135deg, #5bb6ff, #2868ee);
+  color: white;
+  box-shadow: 0 6px 18px rgba(37, 99, 235, .3);
+}
+
+#bPlay::before {
+  content: "▶";
+  font-size: 22px;
+}
+
+#bNext::before {
+  content: "⏭";
+}
+
+#bReplay::before {
+  content: "↻";
+}
+
+.voice-controls button:active {
+  transform: scale(.93);
+}
