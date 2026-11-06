@@ -698,3 +698,61 @@ input:focus-visible {
     transition-duration: .01ms !important;
   }
 }
+
+/* AUDIO VA INPUT TUGMALARI — YAKUNIY TUZATISH */
+
+.row.voice-controls,
+.voice-controls {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  align-items: center;
+  gap: 8px !important;
+  width: 100%;
+  padding: 4px 0;
+}
+
+.voice-controls button {
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 46px;
+  padding: 4px !important;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel-2);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: normal;
+}
+
+.voice-controls #bPlay {
+  height: 50px;
+  background: linear-gradient(135deg, #5bb6ff, #2868ee);
+  color: white;
+  border: none;
+}
+
+/* PLUS VA MIKROFON */
+
+#dock .k,
+#dock .k.sm {
+  background: var(--panel-2);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 15px;
+}
+
+#dock button:active {
+  transform: scale(.95);
+}
+
+#bPlus,
+#bMic {
+  width: 49px;
+  height: 49px;
+  flex: 0 0 49px;
+  background: var(--panel-2);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 15px;
+}
