@@ -756,3 +756,91 @@ input:focus-visible {
   border: 1px solid var(--line);
   border-radius: 15px;
 }
+
+/* =================================
+   BUBBLE AI — YANGI DOSKA VA MONOKL
+================================= */
+
+/* Doska kataklari */
+#viewport {
+  background-image:
+    linear-gradient(rgba(120, 160, 210, .12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(120, 160, 210, .12) 1px, transparent 1px);
+  background-size: 30px 30px;
+}
+
+body[data-theme="light"] #viewport {
+  background-image:
+    linear-gradient(rgba(70, 100, 150, .15) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(70, 100, 150, .15) 1px, transparent 1px);
+  background-size: 30px 30px;
+}
+
+/* Bubble monokli */
+#bubble::marker {
+  display: none;
+}
+
+#bubble .eyes {
+  gap: 17px;
+}
+
+#bubble .eye:first-child::before {
+  content: "";
+  position: absolute;
+  width: 23px;
+  height: 23px;
+  left: -7px;
+  top: -5px;
+  border: 2px solid #d9e7f5;
+  border-radius: 50%;
+  background: rgba(210, 235, 255, .12);
+  box-shadow:
+    0 0 3px rgba(255,255,255,.8),
+    inset 0 0 4px rgba(255,255,255,.4);
+  z-index: 4;
+  pointer-events: none;
+}
+
+#bubble .eye:first-child::after {
+  z-index: 5;
+}
+
+/* Yozuvlar aniq ko‘rinsin */
+#wb text {
+  paint-order: stroke;
+  stroke: rgba(10, 20, 40, .12);
+  stroke-width: .35px;
+  letter-spacing: .1px;
+}
+
+/* Muhim javob ramkasi */
+#wb rect {
+  filter: drop-shadow(0 2px 5px rgba(59, 130, 246, .15));
+}
+
+/* Bubble yozayotgan paytda */
+#bubble.bubble-writing {
+  animation: bubbleWriting 1.2s ease-in-out infinite;
+}
+
+@keyframes bubbleWriting {
+  0%, 100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.15);
+  }
+}
+
+/* Mobil qurilmalarda kataklar */
+@media (max-width: 480px) {
+  #viewport {
+    background-size: 28px 28px;
+  }
+
+  #bubble .eye:first-child::before {
+    width: 21px;
+    height: 21px;
+  }
+}
