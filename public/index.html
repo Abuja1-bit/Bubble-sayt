@@ -144,6 +144,11 @@
       profileMenu.hidden = true;
     }
 
+    function closeProfileModal() {
+      profileModal.classList.remove('show');
+      profileModal.hidden = true;
+    }
+
     profileButton.addEventListener('click', event => {
       event.stopPropagation();
       profileMenu.hidden = !profileMenu.hidden;
@@ -231,15 +236,17 @@
       }
 
       profileModal.hidden = false;
+      profileModal.classList.add('show');
     });
 
+    // PROFIL OYNASINI YOPISH
     document.getElementById('closeProfile').addEventListener('click', () => {
-      profileModal.hidden = true;
+      closeProfileModal();
     });
 
     profileModal.addEventListener('click', event => {
       if (event.target === profileModal) {
-        profileModal.hidden = true;
+        closeProfileModal();
       }
     });
 
