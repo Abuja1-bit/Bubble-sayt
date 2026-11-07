@@ -12,7 +12,6 @@ const sendBtn = $('go');
 const audio = $('au');
 const answers = $('answers');
 const menu = $('menu');
-const toast = $('toast');
 
 const STORAGE_KEY = 'bubble-ai-history-v1';
 const SESSIONS_KEY = 'bubble-ai-sessions-v1';
@@ -39,12 +38,56 @@ let emotionTimer;
 let pointers = new Map();
 let lastPinchDistance = 0;
 let lastPan = null;
-
 let activeRequestCount = 0;
-let lastAnswerY = 180;
+let bubbleDragging = false;
+let bubbleOffsetX = 0;
+let bubbleOffsetY = 0;
+
+const style = document.createElement('style');
+style.textContent = `
+  #bubble {
+    transition: left .25s ease, top .25s ease;
+    z-index: 30;
+  }
+  #bubble.bubble-writing {
+    transition: left .3s ease, top .3s ease;
+  }
+  #bubble.thinking {
+    animation: bubbleThink 1.2s ease-in-out infinite;
+  }
+  #bubble.happy {
+    animation: bubbleHappy .6s ease-in-out;
+  }
+  #bubble.surprised {
+    animation: bubbleSurprised .5s ease-in-out;
+  }
+  #bubble.sad {
+    animation: bubbleSad .7s ease-in-out;
+  }
+  @keyframes bubbleThink {
+    0%,100% { transform: translateY(0) rotate(0); }
+    50% { transform: translateY(-5px) rotate(-4deg); }
+  }
+  @keyframes bubbleHappy {
+    0%,100% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+  }
+  @keyframes bubbleSurprised {
+    0%,100% { transform: scale(1); }
+    50% { transform: scale(1.12); }
+  }
+  @keyframes bubbleSad {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(4px); }
+  }
+  #wb text {
+    user-select: none;
+  }
+`;
+document.head.appendChild(style);
 
 /* =========================
-   BUBBLE HARAKATI
+   BUBBLE JOYLASHUVI
 ========================= */
 
 function moveBubbleTo(x, y) {
@@ -55,33 +98,64 @@ function moveBubbleTo(x, y) {
   bubble.style.top = `${Math.max(8, Math.min(y, maxY))}px`;
 }
 
-let bubbleDragging = false;
-let bubbleMoved = false;
-let bubbleOffsetX = 0;
-let bubbleOffsetY = 0;
+function bubbleCenter() {
+  moveBubbleTo(
+    (viewport.clientWidth - bubble.offsetWidth) / 2,
+    Math.max(12, (viewport.clientHeight - bubble.offsetHeight) / 2)
+  );
+}
+
+/* Klaviatura ochilganda Bubble input ustiga chiqmaydi. */
+function bubbleAboveChat() {
+  const dock = $('dock');
+  const rect = viewport.getBoundingClientRect();
+  const dockRect = dock.getBoundingClientRect();
+
+  const availableBottom = Math.min(
+    dockRect.top - rect.top,
+    viewport.clientHeight - bubble.offsetHeight - 12
+  );
+
+  moveBubbleTo(
+    viewport.clientWidth - bubble.offsetWidth - 14,
+    Math.max(8, availableBottom - bubble.offsetHeight - 8)
+  );
+}
+
+function bubbleNearAnswer(y) {
+  const screenY = camera.y + y * camera.scale;
+  const x = viewport.clientWidth - bubble.offsetWidth - 18;
+  const maxY = viewport.clientHeight - bubble.offsetHeight - 12;
+
+  moveBubbleTo(
+    x,
+    Math.max(8, Math.min(screenY - bubble.offsetHeight - 12, maxY))
+  );
+}
+
+function bubbleWatchAnswer(y) {
+  bubbleNearAnswer(y);
+  setEmotion('thinking');
+}
 
 bubble.addEventListener('pointerdown', event => {
   event.stopPropagation();
   event.preventDefault();
 
   bubbleDragging = true;
-  bubbleMoved = false;
 
   const rect = bubble.getBoundingClientRect();
-
   bubbleOffsetX = event.clientX - rect.left;
   bubbleOffsetY = event.clientY - rect.top;
 
   bubble.setPointerCapture(event.pointerId);
-  bubble.classList.add('happy', 'bubble-dragging');
+  bubble.classList.add('bubble-dragging');
 });
 
 bubble.addEventListener('pointermove', event => {
-  event.stopPropagation();
-
   if (!bubbleDragging) return;
 
-  bubbleMoved = true;
+  event.stopPropagation();
 
   const rect = viewport.getBoundingClientRect();
 
@@ -93,61 +167,17 @@ bubble.addEventListener('pointermove', event => {
 
 function stopBubbleDragging(event) {
   if (event) event.stopPropagation();
-  if (!bubbleDragging) return;
-
   bubbleDragging = false;
   bubble.classList.remove('bubble-dragging');
-
-  if (activeRequestCount) {
-    setEmotion('thinking');
-  } else {
-    setEmotion('');
-  }
 }
 
 bubble.addEventListener('pointerup', stopBubbleDragging);
 bubble.addEventListener('pointercancel', stopBubbleDragging);
 
-function bubbleCenter() {
-  moveBubbleTo(
-    (viewport.clientWidth - bubble.offsetWidth) / 2,
-    (viewport.clientHeight - bubble.offsetHeight) / 2
-  );
-}
-
-function bubbleAboveChat() {
-  const dock = $('dock');
-  const viewportRect = viewport.getBoundingClientRect();
-  const dockRect = dock.getBoundingClientRect();
-
-  const y = dockRect.top - viewportRect.top - bubble.offsetHeight - 12;
-
-  moveBubbleTo(
-    (viewport.clientWidth - bubble.offsetWidth) / 2,
-    y
-  );
-
-  setEmotion('happy');
-}
-
-function bubbleNearAnswer(y) {
-  const screenY = camera.y + y * camera.scale;
-  const x = viewport.clientWidth - bubble.offsetWidth - 18;
-
-  moveBubbleTo(x, screenY - bubble.offsetHeight - 15);
-}
-
-function bubbleWatchAnswer(y) {
-  bubbleNearAnswer(y);
-  setEmotion('thinking');
-}
-
 input.addEventListener('focus', bubbleAboveChat);
 
 input.addEventListener('blur', () => {
-  if (!activeRequestCount && !speaking) {
-    setEmotion('');
-  }
+  if (!activeRequestCount && !speaking) setEmotion('');
 });
 
 window.addEventListener('resize', () => {
@@ -159,10 +189,13 @@ window.addEventListener('resize', () => {
 });
 
 /* =========================
-   TOAST VA EMOTSIYA
+   XABAR VA HISSIYOT
 ========================= */
 
 function showToast(message) {
+  const toast = $('toast');
+  if (!toast) return;
+
   toast.textContent = message;
   toast.classList.add('show');
 
@@ -178,7 +211,8 @@ function setEmotion(name = '') {
     'thinking',
     'happy',
     'surprised',
-    'sad'
+    'sad',
+    'bubble-writing'
   );
 
   if (name) bubble.classList.add(name);
@@ -190,26 +224,22 @@ function happy() {
   clearTimeout(emotionTimer);
 
   emotionTimer = setTimeout(() => {
-    if (!speaking && !activeRequestCount) {
-      setEmotion('');
-    }
+    if (!speaking && !activeRequestCount) setEmotion('');
   }, 1800);
 }
 
 /* =========================
-   7 KUNLIK TARIX
+   TARIX
 ========================= */
 
 function isWithinHistoryLimit(time) {
   const value = Number(time);
   const now = Date.now();
 
-  return (
-    Number.isFinite(value) &&
+  return Number.isFinite(value) &&
     value > 0 &&
     value <= now + 60000 &&
-    now - value <= HISTORY_TTL
-  );
+    now - value <= HISTORY_TTL;
 }
 
 function pruneExpiredHistory() {
@@ -220,18 +250,13 @@ function pruneExpiredHistory() {
   sessions = sessions
     .filter(session => session && Array.isArray(session.items))
     .map(session => {
-      const sessionTime = Number(
-        session.createdAt || session.id
-      );
+      const createdAt = Number(session.createdAt || session.id);
 
       session.items = session.items.filter(item =>
         item && isWithinHistoryLimit(item.time)
       );
 
-      return {
-        ...session,
-        createdAt: sessionTime
-      };
+      return { ...session, createdAt };
     })
     .filter(session =>
       isWithinHistoryLimit(session.createdAt) &&
@@ -254,10 +279,7 @@ function saveHistory() {
 
 function loadHistory() {
   try {
-    const saved = JSON.parse(
-      localStorage.getItem(STORAGE_KEY) || '[]'
-    );
-
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
     historyItems = Array.isArray(saved) ? saved : [];
   } catch {
     historyItems = [];
@@ -279,35 +301,24 @@ function saveSessions() {
 
 function saveSession() {
   pruneExpiredHistory();
-
   if (!historyItems.length) return;
 
   const now = Date.now();
 
-  const session = {
+  sessions.unshift({
     id: now,
     createdAt: now,
     time: new Date(now).toLocaleString('uz-UZ'),
-    items: historyItems.map(item => ({
-      prompt: item.prompt,
-      text: item.text,
-      audio: item.audio || null,
-      time: item.time
-    }))
-  };
+    items: historyItems.map(item => ({ ...item }))
+  });
 
-  sessions.unshift(session);
   sessions = sessions.slice(0, 20);
-
   saveSessions();
 }
 
 function loadSessions() {
   try {
-    const saved = JSON.parse(
-      localStorage.getItem(SESSIONS_KEY) || '[]'
-    );
-
+    const saved = JSON.parse(localStorage.getItem(SESSIONS_KEY) || '[]');
     sessions = Array.isArray(saved) ? saved : [];
   } catch {
     sessions = [];
@@ -334,17 +345,16 @@ function addText(text, x, y, options = {}) {
     y,
     fill: options.color || '#f1f5f9',
     'font-size': options.size || 22,
-    'font-family': options.font || 'Comic Sans MS, Segoe Print, cursive',
+    'font-family': options.font || 'Segoe UI, sans-serif',
     'font-weight': options.weight || 'normal'
   });
 
   node.textContent = text;
   svg.appendChild(node);
-
   return node;
 }
 
-function wrapText(text, maxChars = 31) {
+function wrapText(text, maxChars = 38) {
   const lines = [];
 
   String(text || '').split('\n').forEach(paragraph => {
@@ -370,12 +380,12 @@ function wrapText(text, maxChars = 31) {
 }
 
 /* =========================
-   YOZISH ANIMATSIYASI
+   MATNNI QATORLAB YOZISH
 ========================= */
 
 function drawTyping(text, x, y, done) {
   const lines = wrapText(text);
-  const lineHeight = 34;
+  const lineHeight = 36;
 
   const nodes = lines.map((line, index) => {
     const node = makeSVG('text', {
@@ -383,11 +393,10 @@ function drawTyping(text, x, y, done) {
       y: y + index * lineHeight,
       fill: '#f1f5f9',
       'font-size': 22,
-      'font-family': 'Comic Sans MS, Segoe Print, cursive'
+      'font-family': 'Segoe UI, sans-serif'
     });
 
     svg.appendChild(node);
-
     return { node, line };
   });
 
@@ -404,10 +413,7 @@ function drawTyping(text, x, y, done) {
   let col = 0;
 
   function step() {
-    while (
-      row < nodes.length &&
-      col >= nodes[row].line.length
-    ) {
+    while (row < nodes.length && col >= nodes[row].line.length) {
       row++;
       col = 0;
     }
@@ -432,13 +438,136 @@ function drawTyping(text, x, y, done) {
     dot.setAttribute('cx', x + width + 3);
     dot.setAttribute('cy', y + row * lineHeight - 7);
 
-    setTimeout(
-      step,
-      item.line[col - 1] === ' ' ? 15 : 35
-    );
+    setTimeout(step, item.line[col - 1] === ' ' ? 12 : 22);
   }
 
   step();
+}
+
+/* =========================
+   MUHIM QISMNI AJRATISH
+========================= */
+
+function findImportantPart(text) {
+  const clean = String(text || '').trim();
+  if (!clean) return '';
+
+  const sentences = clean
+    .split(/(?<=[.!?])\s+/)
+    .map(s => s.trim())
+    .filter(Boolean);
+
+  if (!sentences.length) return '';
+
+  const keywords = [
+    'xulosa',
+    'demak',
+    'javob:',
+    'eslab qol',
+    'muhim:',
+    'natija:',
+    'asosiy fikr'
+  ];
+
+  const found = sentences.find(sentence =>
+    keywords.some(word => sentence.toLowerCase().includes(word))
+  );
+
+  if (found) return found;
+
+  /* Juda uzun javobni to‘liq ramkaga olmaymiz. */
+  return sentences.find(sentence =>
+    sentence.length >= 15 && sentence.length <= 130
+  ) || '';
+}
+
+function animateRectangle(x, y, width, height, done) {
+  const rect = makeSVG('rect', {
+    x,
+    y,
+    width,
+    height,
+    rx: 12,
+    fill: 'none',
+    stroke: '#60a5fa',
+    'stroke-width': 3,
+    'stroke-linecap': 'round'
+  });
+
+  svg.appendChild(rect);
+
+  let length;
+
+  try {
+    length = rect.getTotalLength();
+  } catch {
+    if (done) done();
+    return;
+  }
+
+  rect.style.strokeDasharray = length;
+  rect.style.strokeDashoffset = length;
+
+  const dot = makeSVG('circle', {
+    r: 4,
+    fill: '#93c5fd'
+  });
+
+  svg.appendChild(dot);
+
+  let distance = 0;
+
+  function step() {
+    distance = Math.min(length, distance + 5);
+    rect.style.strokeDashoffset = length - distance;
+
+    const point = rect.getPointAtLength(distance);
+    dot.setAttribute('cx', point.x);
+    dot.setAttribute('cy', point.y);
+
+    if (distance < length) {
+      requestAnimationFrame(step);
+    } else {
+      dot.remove();
+      if (done) done();
+    }
+  }
+
+  step();
+}
+
+function drawImportantFrame(text, x, y, done) {
+  if (!text) {
+    if (done) done();
+    return;
+  }
+
+  const node = addText(text, x, y + 28, {
+    color: '#bfdbfe',
+    size: 21,
+    weight: 'bold'
+  });
+
+  let width = Math.min(480, Math.max(180, text.length * 11));
+
+  try {
+    width = Math.min(480, Math.max(180, node.getComputedTextLength() + 24));
+  } catch {}
+
+  /* Ramka avval kichik nuqtadan boshlanadi. */
+  const dot = makeSVG('circle', {
+    cx: x - 12,
+    cy: y + 20,
+    r: 4,
+    fill: '#93c5fd'
+  });
+
+  svg.appendChild(dot);
+
+  setTimeout(() => {
+    dot.remove();
+    animateRectangle(x - 12, y, width, 42, done);
+  }, 180);
 }
 
 /* =========================
@@ -471,9 +600,7 @@ function drawPath(pathData, done) {
 
   const dot = makeSVG('circle', {
     r: 4,
-    fill: '#93c5fd',
-    stroke: '#fff',
-    'stroke-width': 1
+    fill: '#93c5fd'
   });
 
   svg.appendChild(dot);
@@ -482,11 +609,9 @@ function drawPath(pathData, done) {
 
   function step() {
     distance = Math.min(total, distance + 4);
-
     path.style.strokeDashoffset = total - distance;
 
     const point = path.getPointAtLength(distance);
-
     dot.setAttribute('cx', point.x);
     dot.setAttribute('cy', point.y);
 
@@ -536,21 +661,14 @@ function drawShape(shape, x, y, done) {
     circle.style.strokeDashoffset = length;
 
     let distance = 0;
-
-    const dot = makeSVG('circle', {
-      r: 4,
-      fill: '#93c5fd'
-    });
-
+    const dot = makeSVG('circle', { r: 4, fill: '#93c5fd' });
     svg.appendChild(dot);
 
     function step() {
       distance = Math.min(length, distance + 4);
-
       circle.style.strokeDashoffset = length - distance;
 
       const point = circle.getPointAtLength(distance);
-
       dot.setAttribute('cx', point.x);
       dot.setAttribute('cy', point.y);
 
@@ -566,11 +684,8 @@ function drawShape(shape, x, y, done) {
     return;
   }
 
-  if (paths[shape]) {
-    drawPath(paths[shape], done);
-  } else if (done) {
-    done();
-  }
+  if (paths[shape]) drawPath(paths[shape], done);
+  else if (done) done();
 }
 
 function findShape(prompt) {
@@ -588,70 +703,74 @@ function findShape(prompt) {
 }
 
 /* =========================
-   DOSKAGA JAVOB YOZISH
+   DOSKAGA YOZISH
 ========================= */
 
 function writeOnBoard(text, prompt = '') {
   const content = String(text || '').trim();
-
   if (!content) return;
 
   const x = 150;
   const y = writeY;
   const lines = wrapText(content);
   const shapeInfo = findShape(prompt);
+  const lineHeight = 36;
 
-  const shapeHeight = shapeInfo ? 180 : 0;
-  const cardHeight = Math.max(
-    150,
-    shapeHeight + lines.length * 34 + 90
-  );
+  const startY = y + (shapeInfo ? 175 : 25);
 
-  const frame = makeSVG('rect', {
-    x: x - 24,
-    y: y - 48,
-    width: 510,
-    height: cardHeight,
-    rx: 18,
-    fill: '#171a26',
-    'fill-opacity': 0.96,
-    stroke: '#394257',
-    'stroke-width': 2
-  });
-
-  svg.appendChild(frame);
-
-  addText(`Javob ${++answerNumber}`, x, y - 12, {
+  addText(`Javob ${++answerNumber}`, x, y, {
     color: '#93c5fd',
     size: 18,
-    font: 'Segoe UI, sans-serif',
     weight: 'bold'
   });
 
-  function writeBody(startY) {
-    bubbleWatchAnswer(y);
+  function finishWriting() {
+    const important = findImportantPart(content);
+
+    if (important) {
+      const index = content.indexOf(important);
+      const before = content.slice(0, index);
+      const beforeLines = wrapText(before);
+      const frameY = startY + beforeLines.length * lineHeight + 10;
+
+      drawImportantFrame(important, x, frameY, () => {
+        happy();
+      });
+    } else {
+      happy();
+    }
+  }
+
+  function writeBody() {
+    bubble.classList.add('bubble-writing');
+    bubbleNearAnswer(y);
+    setEmotion('thinking');
 
     drawTyping(content, x, startY, () => {
-      if (!activeRequestCount) {
-        happy();
-      }
+      bubble.classList.remove('bubble-writing');
+      finishWriting();
     });
   }
 
   if (shapeInfo) {
-    drawShape(shapeInfo[0], x, y + 5, () => {
-      addText(shapeInfo[1], x, y + 155, {
+    drawShape(shapeInfo[0], x, y + 18, () => {
+      addText(shapeInfo[1], x, y + 158, {
         color: '#93c5fd',
         size: 20
       });
 
-      writeBody(y + 190);
+      writeBody();
     });
   } else {
-    writeBody(y + 35);
+    writeBody();
   }
 
-  writeY += cardHeight + 35;
+  const totalHeight =
+    (shapeInfo ? 180 : 25) +
+    lines.length * lineHeight +
+    100;
+
+  writeY += totalHeight;
 
   if (writeY > WORLD_HEIGHT - 300) {
     writeY = 180;
@@ -699,7 +818,6 @@ function browserSpeak(text) {
   utterance.onstart = () => {
     speaking = true;
     paused = false;
-
     bubble.classList.add('speaking');
     $('bPlay').textContent = '⏸ Pauza';
   };
@@ -717,9 +835,7 @@ function browserSpeak(text) {
   };
 
   const voices = speechSynthesis.getVoices();
-  const uzVoice = voices.find(v =>
-    v.lang.toLowerCase().startsWith('uz')
-  );
+  const uzVoice = voices.find(v => v.lang.toLowerCase().startsWith('uz'));
 
   if (uzVoice) utterance.voice = uzVoice;
 
@@ -727,13 +843,9 @@ function browserSpeak(text) {
 }
 
 function playCurrent() {
-  if (
-    queueIndex < 0 ||
-    queueIndex >= audioQueue.length
-  ) return;
+  if (queueIndex < 0 || queueIndex >= audioQueue.length) return;
 
   const item = audioQueue[queueIndex];
-
   if (!item) return;
 
   if (item.audio) {
@@ -742,7 +854,6 @@ function playCurrent() {
     audio.play().then(() => {
       speaking = true;
       paused = false;
-
       bubble.classList.add('speaking');
       $('bPlay').textContent = '⏸ Pauza';
     }).catch(() => {
@@ -756,13 +867,10 @@ function playCurrent() {
 
 function startQueue(items, startIndex = 0) {
   stopSpeech();
-
   audioQueue = items.filter(item => item && item.text);
   queueIndex = startIndex;
 
-  if (!audioQueue.length) return;
-
-  playCurrent();
+  if (audioQueue.length) playCurrent();
 }
 
 function nextAudio() {
@@ -772,7 +880,6 @@ function nextAudio() {
   } else {
     speaking = false;
     paused = false;
-
     bubble.classList.remove('speaking');
     $('bPlay').textContent = '▶ Davom';
   }
@@ -799,15 +906,11 @@ function toggleSpeech() {
       paused = true;
       $('bPlay').textContent = '▶ Davom';
     }
-
     return;
   }
 
   if ('speechSynthesis' in window) {
-    if (
-      speechSynthesis.speaking &&
-      !speechSynthesis.paused
-    ) {
+    if (speechSynthesis.speaking && !speechSynthesis.paused) {
       speechSynthesis.pause();
       paused = true;
       $('bPlay').textContent = '▶ Davom';
@@ -829,10 +932,7 @@ audio.addEventListener('ended', () => {
 
 audio.addEventListener('error', () => {
   const item = audioQueue[queueIndex];
-
-  if (item && item.text) {
-    browserSpeak(item.text);
-  }
+  if (item && item.text) browserSpeak(item.text);
 });
 
 $('bPlay').addEventListener('click', toggleSpeech);
@@ -864,11 +964,7 @@ function applyCamera() {
 
 function zoomAt(x, y, factor) {
   const oldScale = camera.scale;
-
-  const nextScale = Math.max(
-    0.4,
-    Math.min(2.5, oldScale * factor)
-  );
+  const nextScale = Math.max(0.4, Math.min(2.5, oldScale * factor));
 
   if (nextScale === oldScale) return;
 
@@ -876,7 +972,6 @@ function zoomAt(x, y, factor) {
   const worldY = (y - camera.y) / oldScale;
 
   camera.scale = nextScale;
-
   camera.x = x - worldX * nextScale;
   camera.y = y - worldY * nextScale;
 
@@ -894,11 +989,7 @@ viewport.addEventListener('pointerdown', event => {
   });
 
   if (pointers.size === 1) {
-    lastPan = {
-      x: event.clientX,
-      y: event.clientY
-    };
-
+    lastPan = { x: event.clientX, y: event.clientY };
     viewport.classList.add('drag');
   } else if (pointers.size === 2) {
     const points = [...pointers.values()];
@@ -924,11 +1015,7 @@ viewport.addEventListener('pointermove', event => {
     camera.x += event.clientX - lastPan.x;
     camera.y += event.clientY - lastPan.y;
 
-    lastPan = {
-      x: event.clientX,
-      y: event.clientY
-    };
-
+    lastPan = { x: event.clientX, y: event.clientY };
     applyCamera();
   } else if (pointers.size === 2) {
     const points = [...pointers.values()];
@@ -939,12 +1026,8 @@ viewport.addEventListener('pointermove', event => {
     );
 
     if (lastPinchDistance) {
-      const centerX =
-        (points[0].x + points[1].x) / 2;
-
-      const centerY =
-        (points[0].y + points[1].y) / 2;
-
+      const centerX = (points[0].x + points[1].x) / 2;
+      const centerY = (points[0].y + points[1].y) / 2;
       const rect = viewport.getBoundingClientRect();
 
       zoomAt(
@@ -961,9 +1044,7 @@ viewport.addEventListener('pointermove', event => {
 function endPointer(event) {
   pointers.delete(event.pointerId);
 
-  if (pointers.size < 2) {
-    lastPinchDistance = 0;
-  }
+  if (pointers.size < 2) lastPinchDistance = 0;
 
   if (pointers.size === 1) {
     lastPan = [...pointers.values()][0];
@@ -1004,18 +1085,12 @@ function resetBoard() {
 
   writeY = 180;
   answerNumber = 0;
-
   audioQueue = [];
   queueIndex = 0;
 
   menu.hidden = true;
 
-  camera = {
-    x: 0,
-    y: 0,
-    scale: 1
-  };
-
+  camera = { x: 0, y: 0, scale: 1 };
   applyCamera();
   bubbleCenter();
   setEmotion('');
@@ -1076,7 +1151,6 @@ function renderHistoryMenu() {
 
       queueIndex = 0;
       menu.hidden = true;
-
       bubbleCenter();
 
       showToast('Oldingi doska qayta ochildi.');
@@ -1086,14 +1160,11 @@ function renderHistoryMenu() {
   });
 
   const clear = document.createElement('button');
-
   clear.type = 'button';
   clear.textContent = 'Tarixni tozalash';
 
   clear.onclick = () => {
-    if (!confirm('Barcha saqlangan doskalar o‘chirilsinmi?')) {
-      return;
-    }
+    if (!confirm('Barcha saqlangan doskalar o‘chirilsinmi?')) return;
 
     sessions = [];
     historyItems = [];
@@ -1102,20 +1173,15 @@ function renderHistoryMenu() {
     localStorage.removeItem(STORAGE_KEY);
 
     menu.hidden = true;
-
     showToast('Tarix tozalandi.');
   };
 
   menu.append(clear);
 
   const close = document.createElement('button');
-
   close.type = 'button';
   close.textContent = 'Yopish';
-
-  close.onclick = () => {
-    menu.hidden = true;
-  };
+  close.onclick = () => { menu.hidden = true; };
 
   menu.append(close);
 }
@@ -1141,15 +1207,13 @@ async function ask(prompt, image = null) {
   sendBtn.disabled = true;
   sendBtn.textContent = '…';
 
-  bubbleAboveChat();
   setEmotion('thinking');
+  bubbleAboveChat();
 
   try {
     const response = await fetch('/api/lesson', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         prompt,
         image,
@@ -1178,12 +1242,7 @@ async function ask(prompt, image = null) {
 
     historyItems.push(item);
     historyItems = historyItems.slice(-30);
-
     saveHistory();
-
-    const answerStartY = writeY;
-
-    bubbleNearAnswer(answerStartY);
 
     writeOnBoard(item.text, item.prompt);
 
@@ -1192,44 +1251,29 @@ async function ask(prompt, image = null) {
       audio: item.audio
     });
 
-    if (!speaking && !paused) {
-      if (audioQueue.length === 1) {
-        queueIndex = 0;
-        playCurrent();
-      }
+    if (!speaking && !paused && audioQueue.length === 1) {
+      queueIndex = 0;
+      playCurrent();
     }
 
-    setEmotion('');
     showToast('Bubble doskaga javob yozmoqda.');
   } catch (error) {
     setEmotion('sad');
-
-    showToast(
-      error.message || 'Xatolik yuz berdi.'
-    );
+    showToast(error.message || 'Xatolik yuz berdi.');
   } finally {
-    activeRequestCount = Math.max(
-      0,
-      activeRequestCount - 1
-    );
+    activeRequestCount = Math.max(0, activeRequestCount - 1);
 
     sendBtn.disabled = false;
     sendBtn.textContent = '➤';
-
     input.value = '';
 
-    if (!activeRequestCount && !speaking) {
-      setEmotion('');
-    }
+    if (!activeRequestCount && !speaking) setEmotion('');
   }
 }
 
 form.addEventListener('submit', event => {
   event.preventDefault();
-
-  const prompt = input.value.trim();
-
-  ask(prompt);
+  ask(input.value.trim());
 });
 
 /* =========================
@@ -1242,7 +1286,6 @@ $('bPlus').addEventListener('click', () => {
 
 $('imageInput').addEventListener('change', event => {
   const file = event.target.files?.[0];
-
   if (!file) return;
 
   if (!file.type.startsWith('image/')) {
@@ -1299,14 +1342,12 @@ $('bMic').addEventListener('click', () => {
   }
 
   recognition = new SpeechRecognition();
-
   recognition.lang = 'uz-UZ';
   recognition.interimResults = false;
   recognition.maxAlternatives = 1;
 
   recognition.onresult = event => {
     input.value = event.results[0][0].transcript;
-
     bubbleAboveChat();
     setEmotion('surprised');
 
@@ -1347,12 +1388,7 @@ answers.replaceChildren();
 writeY = 180;
 answerNumber = 0;
 
-camera = {
-  x: 0,
-  y: 0,
-  scale: 1
-};
-
+camera = { x: 0, y: 0, scale: 1 };
 applyCamera();
 setEmotion('');
 
