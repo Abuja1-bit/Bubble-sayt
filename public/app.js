@@ -105,7 +105,6 @@ function bubbleCenter() {
   );
 }
 
-/* Klaviatura ochilganda Bubble input ustiga chiqmaydi. */
 function bubbleAboveChat() {
   const dock = $('dock');
   const rect = viewport.getBoundingClientRect();
@@ -420,7 +419,7 @@ function drawTyping(text, x, y, done) {
 
     if (row >= nodes.length) {
       dot.remove();
-      if (done) done();
+      if (done) done(nodes);
       return;
     }
 
@@ -475,35 +474,26 @@ function findImportantPart(text) {
 
   if (found) return found;
 
-  /* Juda uzun javobni to‘liq ramkaga olmaymiz. */
-  return sentences.find(sentence =>
-    sentence.length >= 15 && sentence.length <= 130
-  ) || '';
+  return sentences[sentences.length - 1];
 }
 
+/* Ramkani SVG rect uzunligiga bog‘lamaymiz.
+   Bu usul mobil brauzerlarda ham ishlaydi. */
 function animateRectangle(x, y, width, height, done) {
   const rect = makeSVG('rect', {
     x,
     y,
     width,
     height,
-    rx: 12,
+    rx: 10,
     fill: 'none',
     stroke: '#60a5fa',
-    'stroke-width': 3,
-    'stroke-linecap': 'round'
+    'stroke-width': 3
   });
 
   svg.appendChild(rect);
 
-  let length;
-
-  try {
-    length = rect.getTotalLength();
-  } catch {
-    if (done) done();
-    return;
-  }
+  const length = 2 * (width + height);
 
   rect.style.strokeDasharray = length;
   rect.style.strokeDashoffset = length;
@@ -521,9 +511,25 @@ function animateRectangle(x, y, width, height, done) {
     distance = Math.min(length, distance + 5);
     rect.style.strokeDashoffset = length - distance;
 
-    const point = rect.getPointAtLength(distance);
-    dot.setAttribute('cx', point.x);
-    dot.setAttribute('cy', point.y);
+    let px;
+    let py;
+
+    if (distance <= width) {
+      px = x + distance;
+      py = y;
+    } else if (distance <= width + height) {
+      px = x + width;
+      py = y + distance - width;
+    } else if (distance <= 2 * width + height) {
+      px = x + width - (distance - width - height);
+      py = y + height;
+    } else {
+      px = x;
+      py = y + height - (distance - 2 * width - height);
+    }
+
+    dot.setAttribute('cx', px);
+    dot.setAttribute('cy', py);
 
     if (distance < length) {
       requestAnimationFrame(step);
@@ -536,38 +542,118 @@ function animateRectangle(x, y, width, height, done) {
   step();
 }
 
-function drawImportantFrame(text, x, y, done) {
-  if (!text) {
+/* Muhim gap bir necha qatorga bo‘linsa,
+   har bir qatorning tegishli qismini ramkaga oladi. */
+function drawImportantFrame(nodes, important, done) {
+  if (!important || !nodes.length) {
     if (done) done();
     return;
   }
 
-  const node = addText(text, x, y + 28, {
-    color: '#bfdbfe',
-    size: 21,
-    weight: 'bold'
+  const normalizedImportant = important
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+
+  const normalizedLines = nodes.map(item =>
+    item.line.replace(/\s+/g, ' ').trim()
+  );
+
+  const joined = normalizedLines.join(' ').toLowerCase();
+  const start = joined.indexOf(normalizedImportant);
+
+  if (start < 0) {
+    if (done) done();
+    return;
+  }
+
+  const end = start + normalizedImportant.length;
+  const segments = [];
+  let position = 0;
+
+  normalizedLines.forEach((line, index) => {
+    const lineStart = position;
+    const lineEnd = lineStart + line.length;
+
+    const overlapStart = Math.max(start, lineStart);
+    const overlapEnd = Math.min(end, lineEnd);
+
+    if (overlapStart < overlapEnd) {
+      const localStart = overlapStart - lineStart;
+      const localEnd = overlapEnd - lineStart;
+
+      const prefix = line.slice(0, localStart);
+      const selected = line.slice(localStart, localEnd);
+
+      const measure = makeSVG('text', {
+        x: 150,
+        y: 0,
+        fill: 'transparent',
+        'font-size': 22,
+        'font-family': 'Segoe UI, sans-serif'
+      });
+
+      measure.textContent = prefix;
+      svg.appendChild(measure);
+
+      let prefixWidth = 0;
+
+      try {
+        prefixWidth = measure.getComputedTextLength();
+      } catch {
+        prefixWidth = prefix.length * 11;
+      }
+
+      measure.textContent = selected;
+
+      let selectedWidth = 0;
+
+      try {
+        selectedWidth = measure.getComputedTextLength();
+      } catch {
+        selectedWidth = selected.length * 11;
+      }
+
+      measure.remove();
+
+      const lineBox = nodes[index].node.getBBox();
+
+      segments.push({
+        x: 150 + prefixWidth - 9,
+        y: lineBox.y - 8,
+        width: Math.max(30, selectedWidth + 18),
+        height: lineBox.height + 16
+      });
+    }
+
+    position = lineEnd + 1;
   });
 
-  let width = Math.min(480, Math.max(180, text.length * 11));
+  if (!segments.length) {
+    if (done) done();
+    return;
+  }
 
-  try {
-    width = Math.min(480, Math.max(180, node.getComputedTextLength() + 24));
-  } catch {}
+  let index = 0;
 
-  /* Ramka avval kichik nuqtadan boshlanadi. */
-  const dot = makeSVG('circle', {
-    cx: x - 12,
-    cy: y + 20,
-    r: 4,
-    fill: '#93c5fd'
-  });
+  function nextSegment() {
+    if (index >= segments.length) {
+      if (done) done();
+      return;
+    }
 
-  svg.appendChild(dot);
+    const segment = segments[index++];
 
-  setTimeout(() => {
-    dot.remove();
-    animateRectangle(x - 12, y, width, 42, done);
-  }, 180);
+    animateRectangle(
+      segment.x,
+      segment.y,
+      segment.width,
+      segment.height,
+      nextSegment
+    );
+  }
+
+  nextSegment();
 }
 
 /* =========================
@@ -724,31 +810,19 @@ function writeOnBoard(text, prompt = '') {
     weight: 'bold'
   });
 
-  function finishWriting() {
-    const important = findImportantPart(content);
-
-    if (important) {
-      const index = content.indexOf(important);
-      const before = content.slice(0, index);
-      const beforeLines = wrapText(before);
-      const frameY = startY + beforeLines.length * lineHeight + 10;
-
-      drawImportantFrame(important, x, frameY, () => {
-        happy();
-      });
-    } else {
-      happy();
-    }
-  }
-
   function writeBody() {
     bubble.classList.add('bubble-writing');
     bubbleNearAnswer(y);
     setEmotion('thinking');
 
-    drawTyping(content, x, startY, () => {
+    drawTyping(content, x, startY, nodes => {
       bubble.classList.remove('bubble-writing');
-      finishWriting();
+
+      const important = findImportantPart(content);
+
+      drawImportantFrame(nodes, important, () => {
+        happy();
+      });
     });
   }
 
